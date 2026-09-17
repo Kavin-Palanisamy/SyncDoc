@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { EditorPage } from './pages/EditorPage.js';
-
+import Login from "./components/Login";
 export const App: React.FC = () => {
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('doc') || null;
@@ -31,6 +33,7 @@ export const App: React.FC = () => {
     url.searchParams.delete('doc');
     window.history.pushState({}, '', url.toString());
   };
+  if (!isLoggedIn) { return <Login onLogin={() => setIsLoggedIn(true)} />; }
 
   return activeDocumentId ? (
     <EditorPage

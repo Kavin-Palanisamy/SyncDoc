@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Login.css";
-export default function Login({onLogin}) {
+export default function Login({onLogin,onSwitchToSignup }) {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -170,6 +170,17 @@ export default function Login({onLogin}) {
           <button type="submit" className="login-submit" disabled={isSubmitting}>
             <span>{isSubmitting ? "Signing in" : "Sign in"}</span>
           </button>
+          
+          <p className="login-switch">
+         Don't have an account?{" "}
+       <button
+        type="button"
+       onClick={onSwitchToSignup}
+      className="login-signup-link"
+     >
+    Sign up
+  </button>
+</p>
         </form>
       </main>
     </div>

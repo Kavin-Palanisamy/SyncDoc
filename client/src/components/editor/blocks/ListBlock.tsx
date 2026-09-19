@@ -116,8 +116,14 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (contentRef.current && contentRef.current.innerText !== (item.content || '')) {
-      contentRef.current.innerText = item.content || '';
+    if (!contentRef.current) return;
+    const isFocused = document.activeElement === contentRef.current;
+    const currentText = contentRef.current.innerText;
+    const targetText = item.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        contentRef.current.innerText = targetText;
+      }
     }
   }, [item.content]);
 

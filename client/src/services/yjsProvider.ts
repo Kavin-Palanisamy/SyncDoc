@@ -92,7 +92,7 @@ export class SyncDocYjsProvider {
 
     // Local Yjs update handler -> Send to server
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
-      if (origin !== 'remote' && !this.isDestroyed) {
+      if (origin !== 'remote' && origin !== 'local-init' && !this.isDestroyed) {
         this.socket.emit('yjs-update', {
           documentId: this.documentId,
           update: Array.from(update),
@@ -143,7 +143,7 @@ export class SyncDocYjsProvider {
         if (root.children && root.children.length > 0) {
           this.yNodes.push(root.children);
         }
-      });
+      }, 'local-init');
     }
   }
 

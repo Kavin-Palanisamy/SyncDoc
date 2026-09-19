@@ -108,10 +108,6 @@ export const CollaborationProvider: React.FC<{
 
     providerRef.current = provider;
 
-    if (initialDocument) {
-      provider.initializeFromInitialAST(initialDocument);
-    }
-
     const undoManager = new Y.UndoManager([provider.yNodes, provider.yMeta]);
     undoManagerRef.current = undoManager;
 

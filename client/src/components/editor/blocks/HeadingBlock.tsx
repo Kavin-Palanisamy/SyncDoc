@@ -22,8 +22,14 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({
   const level = node.level || 1;
 
   useEffect(() => {
-    if (contentRef.current && contentRef.current.innerText !== (node.content || '')) {
-      contentRef.current.innerText = node.content || '';
+    if (!contentRef.current) return;
+    const isFocused = document.activeElement === contentRef.current;
+    const currentText = contentRef.current.innerText;
+    const targetText = node.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        contentRef.current.innerText = targetText;
+      }
     }
   }, [node.content]);
 

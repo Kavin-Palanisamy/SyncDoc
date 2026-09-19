@@ -37,8 +37,14 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (codeRef.current && codeRef.current.innerText !== (node.content || '')) {
-      codeRef.current.innerText = node.content || '';
+    if (!codeRef.current) return;
+    const isFocused = document.activeElement === codeRef.current;
+    const currentText = codeRef.current.innerText;
+    const targetText = node.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        codeRef.current.innerText = targetText;
+      }
     }
   }, [node.content]);
 

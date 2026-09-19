@@ -56,14 +56,14 @@ const COLOR_PALETTE = [
 
 function getRandomUser(): UserProfile {
   const names = ['Alex Chen', 'Sam Rivera', 'Taylor Kim', 'Jordan Vance', 'Morgan Lee', 'Casey Smith'];
-  const storedName = localStorage.getItem('syncdoc_user_name');
-  const storedId = localStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}`;
-  const storedColor = localStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
+  const storedName = sessionStorage.getItem('syncdoc_user_name');
+  const storedId = sessionStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const storedColor = sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
 
   const userName = storedName || names[Math.floor(Math.random() * names.length)]!;
-  localStorage.setItem('syncdoc_user_id', storedId);
-  localStorage.setItem('syncdoc_user_name', userName);
-  localStorage.setItem('syncdoc_user_color', storedColor);
+  sessionStorage.setItem('syncdoc_user_id', storedId);
+  sessionStorage.setItem('syncdoc_user_name', userName);
+  sessionStorage.setItem('syncdoc_user_color', storedColor);
 
   return {
     userId: storedId,
@@ -105,10 +105,6 @@ export const CollaborationProvider: React.FC<{
       },
       onPresenceChange: (users) => {
         setCollaborators(users);
-        const myPresence = users.find((u) => u.userId === currentUser.userId);
-        if (myPresence?.clientId) {
-          setClientId(myPresence.clientId);
-        }
       },
       onBlockLocksChange: (locks) => setBlockLocks(locks),
       onDocChange: (updatedNodes, updatedTitle, updatedVersion) => {
@@ -204,7 +200,11 @@ export const CollaborationProvider: React.FC<{
       const provider = providerRef.current;
       if (!provider) return;
 
-      const newNode = createNode(type, documentId, atIndex, {
+      const rootId =
+        (provider.yMeta.get('id') as string | undefined) ||
+        `doc_${documentId}`;
+
+      const newNode = createNode(type, rootId, atIndex, {
         ...options,
         metadata: { author: currentUser.userName, createdAt: Date.now() },
       });
@@ -270,7 +270,11 @@ export const CollaborationProvider: React.FC<{
 
         const oldNode = provider.yNodes.get(idx);
         const content = (oldNode as { content?: string }).content || '';
-        const converted = createNode(newType, documentId, idx, { content });
+        const rootId =
+          (provider.yMeta.get('id') as string | undefined) ||
+          oldNode.parentId ||
+          `doc_${documentId}`;
+        const converted = createNode(newType, rootId, idx, { content });
         converted.id = oldNode.id;
 
         provider.yNodes.delete(idx, 1);

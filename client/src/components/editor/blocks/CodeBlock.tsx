@@ -49,6 +49,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   }, [node.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (codeRef.current) {
       onContentChange(codeRef.current.innerText);
     }
@@ -67,7 +68,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           <select
             value={node.language || 'typescript'}
             disabled={isLocked}
-            onChange={(e) => onLanguageChange(e.target.value)}
+            onChange={(e) => {
+              if (isLocked) return;
+              onLanguageChange(e.target.value);
+            }}
             className="text-xs bg-slate-900 text-blue-400 font-mono px-2 py-1 rounded border border-slate-700 hover:border-slate-600 focus:outline-none cursor-pointer"
           >
             {POPULAR_LANGUAGES.map((lang) => (
@@ -97,7 +101,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         data-placeholder="// Write code here..."
-        className={`codeblock-editor block-editable ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+        className={`codeblock-editor block-editable ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
     </div>
   );

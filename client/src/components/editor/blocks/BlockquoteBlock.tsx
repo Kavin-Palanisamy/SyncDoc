@@ -31,6 +31,7 @@ export const BlockquoteBlock: React.FC<BlockquoteBlockProps> = ({
   }, [node.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (contentRef.current) {
       onContentChange(contentRef.current.innerText);
     }
@@ -46,7 +47,7 @@ export const BlockquoteBlock: React.FC<BlockquoteBlockProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         data-placeholder="Quote text..."
-        className={`block-editable ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+        className={`block-editable ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
     </div>
   );

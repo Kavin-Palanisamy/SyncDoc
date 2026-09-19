@@ -34,6 +34,7 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({
   }, [node.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (contentRef.current) {
       onContentChange(contentRef.current.innerText);
     }
@@ -45,7 +46,10 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({
         <select
           value={level}
           disabled={isLocked}
-          onChange={(e) => onLevelChange(parseInt(e.target.value, 10) as 1 | 2 | 3 | 4 | 5 | 6)}
+          onChange={(e) => {
+            if (isLocked) return;
+            onLevelChange(parseInt(e.target.value, 10) as 1 | 2 | 3 | 4 | 5 | 6);
+          }}
           className="text-xs bg-slate-800 text-cyan-400 font-mono px-2 py-0.5 rounded border border-slate-700 hover:border-slate-600 focus:outline-none cursor-pointer"
         >
           <option value={1}>H1 Heading</option>
@@ -65,7 +69,7 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         data-placeholder={`Heading ${level}...`}
-        className={`block-editable block-heading block-h${level} ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+        className={`block-editable block-heading block-h${level} ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
     </div>
   );

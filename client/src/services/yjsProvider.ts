@@ -49,6 +49,10 @@ export class SyncDocYjsProvider {
   private setupListeners(options: YjsProviderOptions): void {
     // Socket connection events
     this.socket.on('connect', () => {
+      if (this.isDestroyed) {
+        this.socket.disconnect();
+        return;
+      }
       options.onStatusChange?.('connected', this.socket.id);
       // Join document room
       this.socket.emit('join-document', {
@@ -158,8 +162,8 @@ export class SyncDocYjsProvider {
         documentId: this.documentId,
         clientId: this.socket.id,
       });
-      this.socket.disconnect();
     }
+    this.socket.disconnect();
     this.doc.destroy();
   }
 }

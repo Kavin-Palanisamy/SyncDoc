@@ -392,11 +392,17 @@ export class ConflictResolutionEngine {
         if (node1.order !== node2.order) {
           reordered.push({ id, oldOrder: node1.order, newOrder: node2.order });
         }
-        if (
-          (node1 as { content?: string }).content !== (node2 as { content?: string }).content ||
-          node1.type !== node2.type ||
-          (node1 as { level?: number }).level !== (node2 as { level?: number }).level
-        ) {
+        const content1 = (node1 as { content?: string }).content ?? '';
+        const content2 = (node2 as { content?: string }).content ?? '';
+        const contentChanged = content1 !== content2;
+
+        const typeChanged = node1.type !== node2.type;
+
+        const level1 = (node1 as { level?: number }).level ?? 0;
+        const level2 = (node2 as { level?: number }).level ?? 0;
+        const levelChanged = (node1.type === 'heading' || node2.type === 'heading') && level1 !== level2;
+
+        if (contentChanged || typeChanged || levelChanged) {
           modified.push({ id, oldNode: node1, newNode: node2 });
         }
       }

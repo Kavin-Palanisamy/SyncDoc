@@ -1,5 +1,13 @@
 import mongoose, { Schema, Document as MongooseDocument } from 'mongoose';
-import { ASTNode, ASTNodeType, BaseNode, DocumentNode } from '@syncdoc/shared';
+import {
+  ASTNode,
+  ASTNodeType,
+  BaseNode,
+  DocumentNode,
+  ListNode,
+  ListItemNode,
+  BlockquoteNode,
+} from '@syncdoc/shared';
 
 const ALLOWED_NODE_TYPES: ASTNodeType[] = [
   'document',
@@ -69,12 +77,33 @@ export function validateASTTree(root: ASTNode): void {
     throw new Error('AST root cannot be null or undefined.');
   }
 
+  if (typeof root !== 'object') {
+    throw new Error('AST root must be a valid object.');
+  }
+
   if (root.type !== 'document') {
     throw new Error(`Root node must be of type 'document', received '${root.type}'.`);
   }
 
   if ((root as BaseNode).parentId !== null) {
     throw new Error(`Root node must have parentId null, received '${(root as BaseNode).parentId}'.`);
+  }
+
+  const docRoot = root as DocumentNode;
+
+  if (docRoot.title !== undefined && typeof docRoot.title !== 'string') {
+    throw new Error("Root document node must have a valid string 'title'.");
+  }
+
+  if (
+    docRoot.version !== undefined &&
+    (typeof docRoot.version !== 'number' || isNaN(docRoot.version) || docRoot.version < 1)
+  ) {
+    throw new Error("Root document node must have a positive integer 'version'.");
+  }
+
+  if (docRoot.children === undefined || !Array.isArray(docRoot.children)) {
+    throw new Error("Root document node has invalid children: must have a 'children' array.");
   }
 
   const seenIds = new Set<string>();
@@ -87,6 +116,10 @@ export function validateASTTree(root: ASTNode): void {
 
     if (!node.id || typeof node.id !== 'string' || node.id.trim() === '') {
       throw new Error(`Node of type '${node.type}' is missing a valid stable ID.`);
+    }
+
+    if (!/^[a-zA-Z0-9_.-]+$/.test(node.id)) {
+      throw new Error(`Node ID '${node.id}' contains invalid characters.`);
     }
 
     if (activePath.has(node.id)) {
@@ -110,31 +143,83 @@ export function validateASTTree(root: ASTNode): void {
       );
     }
 
-    if (node.type === 'list_item') {
-      if (!parentNode || parentNode.type !== 'list') {
-        throw new Error(`'list_item' node '${node.id}' must be a child of a 'list' node.`);
+    if (typeof node.order !== 'number' || isNaN(node.order) || node.order < 0) {
+      throw new Error(`Node '${node.id}' has invalid order '${node.order}'. Order must be a non-negative number.`);
+    }
+
+    if (node.type === 'heading') {
+      const headingNode = node as { level?: number; content?: unknown };
+      if (
+        typeof headingNode.level !== 'number' ||
+        !Number.isInteger(headingNode.level) ||
+        headingNode.level < 1 ||
+        headingNode.level > 6
+      ) {
+        throw new Error(`'heading' node '${node.id}' must have a level between 1 and 6.`);
+      }
+      if (headingNode.content !== undefined && typeof headingNode.content !== 'string') {
+        throw new Error(`'heading' node '${node.id}' content must be a string.`);
+      }
+    }
+
+    if (node.type === 'paragraph') {
+      const pNode = node as { content?: unknown };
+      if (pNode.content !== undefined && typeof pNode.content !== 'string') {
+        throw new Error(`'paragraph' node '${node.id}' content must be a string.`);
+      }
+    }
+
+    if (node.type === 'code_block') {
+      const cbNode = node as { language?: unknown; content?: unknown };
+      if (cbNode.language !== undefined && typeof cbNode.language !== 'string') {
+        throw new Error(`'code_block' node '${node.id}' language must be a string.`);
+      }
+      if (cbNode.content !== undefined && typeof cbNode.content !== 'string') {
+        throw new Error(`'code_block' node '${node.id}' content must be a string.`);
       }
     }
 
     if (node.type === 'list') {
-      if (node.children && node.children.length > 0) {
-        for (const child of node.children) {
-          if (child.type !== 'list_item') {
-            throw new Error(`'list' node '${node.id}' can only contain 'list_item' children, found '${child.type}'.`);
-          }
+      const listNode = node as ListNode;
+      if (listNode.children === undefined || !Array.isArray(listNode.children)) {
+        throw new Error(`'list' node '${node.id}' must have a 'children' array.`);
+      }
+      if (listNode.listType && !['bullet', 'ordered', 'task'].includes(listNode.listType)) {
+        throw new Error(
+          `'list' node '${node.id}' has invalid listType '${listNode.listType}'. Allowed types: bullet, ordered, task.`
+        );
+      }
+      for (const child of listNode.children) {
+        if (!child || typeof child !== 'object' || child.type !== 'list_item') {
+          throw new Error(
+            `'list' node '${node.id}' can only contain 'list_item' children, found '${child ? (child as any).type : child}'.`
+          );
         }
       }
     }
 
-    if (node.type === 'heading') {
-      const headingNode = node as { level?: number };
-      if (!headingNode.level || headingNode.level < 1 || headingNode.level > 6) {
-        throw new Error(`'heading' node '${node.id}' must have a level between 1 and 6.`);
+    if (node.type === 'list_item') {
+      if (!parentNode || parentNode.type !== 'list') {
+        throw new Error(`'list_item' node '${node.id}' must be a child of a 'list' node.`);
+      }
+      const li = node as ListItemNode;
+      if (li.checked !== undefined && typeof li.checked !== 'boolean') {
+        throw new Error(`'list_item' node '${node.id}' has invalid checked value. Expected boolean.`);
+      }
+      if (li.content !== undefined && typeof li.content !== 'string') {
+        throw new Error(`'list_item' node '${node.id}' content must be a string.`);
       }
     }
 
-    if (typeof node.order !== 'number' || isNaN(node.order) || node.order < 0) {
-      throw new Error(`Node '${node.id}' has invalid order '${node.order}'. Order must be a non-negative number.`);
+    if (node.type === 'blockquote') {
+      const bq = node as BlockquoteNode;
+      if (bq.content !== undefined && typeof bq.content !== 'string') {
+        throw new Error(`'blockquote' node '${node.id}' content must be a string.`);
+      }
+    }
+
+    if (node.children !== undefined && !Array.isArray(node.children)) {
+      throw new Error(`Node '${node.id}' has invalid children. Expected array, received '${typeof node.children}'.`);
     }
 
     if (node.children && Array.isArray(node.children)) {

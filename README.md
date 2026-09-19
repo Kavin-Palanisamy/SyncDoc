@@ -452,17 +452,17 @@ npm run dev
 
 ## 17. Running Tests
 
-Execute all 6 test suites:
+Execute all test suites:
 ```bash
 npm test
 ```
 
-Execute the 10-client concurrent stress test harness:
+Execute the concurrent multi-client stress test and performance benchmarks:
 ```bash
 npm run test:stress
 ```
 
-Run TypeScript strict type checking:
+Run TypeScript strict type checking across all workspaces:
 ```bash
 npm run typecheck
 ```
@@ -471,7 +471,7 @@ npm run typecheck
 
 ## 18. Concurrent Client Testing & Stress Validation
 
-The test suite includes `tests/multi-client-stress.test.ts` which simulates **10 concurrent clients** connected to the same document room:
+The test suite includes `tests/multi-client-stress.test.ts` and `tests/performance-stress.test.ts` which simulate concurrent clients (5, 10, 20 clients) and benchmark large AST performance up to 5,000 nodes:
 1. **Client 0**: Adds Document Title & Overview Paragraph.
 2. **Client 1**: Concurrently inserts Problem Statement Heading.
 3. **Client 2**: Concurrently inserts TypeScript Code Block.
@@ -507,8 +507,11 @@ The test suite includes `tests/multi-client-stress.test.ts` which simulates **10
 
 ---
 
-## 20. Known Limitations & Future Improvements
+## 20. Known Limitations & Production Deployment Responsibilities
 
 1. **Rich Inline Marks (Bold/Italic/Inline Code in ContentEditable)**: Blocks support full multiline text and structured markdown conversion; rich WYSIWYG inline span tokenization can be expanded in future versions.
 2. **Native PDF Binary Compilation**: Currently produces standalone print-ready HTML with print media CSS stylesheets (supported by browser `window.print()` / PDF printer). A headless Chromium/Puppeteer worker can be added for headless server-side `.pdf` binary streaming.
-3. **Persistent User Authentication**: Presence currently uses session client identities and customizable local profile names. JWT/OAuth authentication can be integrated when user accounts are required.
+3. **User Authentication**: Presence currently uses session client identities and customizable local profile names. JWT/OAuth authentication can be integrated when user accounts are required.
+4. **Single-Node In-Memory Collaboration**: In-memory Yjs collaboration sessions reside on the current Node.js process. Scaling beyond a single server instance requires sticky WebSocket sessions or external CRDT pub/sub relay.
+5. **TLS / SSL Termination**: Production deployments should terminate HTTPS and WSS at a reverse proxy (e.g. NGINX, Caddy, Cloudflare, or AWS ALB).
+6. **External Production Database**: In production (`NODE_ENV=production`), an external MongoDB instance is strictly required via `MONGODB_URI`. In-memory database fallback is disabled in production to protect persistent data.

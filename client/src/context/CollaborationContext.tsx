@@ -27,6 +27,7 @@ interface CollaborationContextValue {
   blockLocks: Record<string, BlockLockState>;
   connectionStatus: 'connecting' | 'connected' | 'disconnected';
   currentUser: UserProfile;
+  clientId: string;
   activeBlockId: string | null;
   canUndo: boolean;
   canRedo: boolean;
@@ -83,6 +84,7 @@ export const CollaborationProvider: React.FC<{
   const [collaborators, setCollaborators] = useState<UserPresence[]>([]);
   const [blockLocks, setBlockLocks] = useState<Record<string, BlockLockState>>({});
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [clientId, setClientId] = useState<string>('');
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(new Date());
@@ -96,8 +98,18 @@ export const CollaborationProvider: React.FC<{
     const provider = new SyncDocYjsProvider({
       documentId,
       user: currentUser,
-      onStatusChange: (status) => setConnectionStatus(status),
-      onPresenceChange: (users) => setCollaborators(users),
+      onStatusChange: (status, socketId) => {
+        setConnectionStatus(status);
+        if (socketId) setClientId(socketId);
+        else if (status === 'disconnected') setClientId('');
+      },
+      onPresenceChange: (users) => {
+        setCollaborators(users);
+        const myPresence = users.find((u) => u.userId === currentUser.userId);
+        if (myPresence?.clientId) {
+          setClientId(myPresence.clientId);
+        }
+      },
       onBlockLocksChange: (locks) => setBlockLocks(locks),
       onDocChange: (updatedNodes, updatedTitle, updatedVersion) => {
         setNodes([...updatedNodes]);
@@ -343,6 +355,7 @@ export const CollaborationProvider: React.FC<{
         blockLocks,
         connectionStatus,
         currentUser,
+        clientId: clientId || providerRef.current?.clientId || '',
         activeBlockId,
         canUndo,
         canRedo,

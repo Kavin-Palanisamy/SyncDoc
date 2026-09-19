@@ -54,6 +54,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
     activeBlockId,
     blockLocks,
     collaborators,
+    currentUser,
+    clientId,
   } = useCollaboration();
 
   const [showTypeMenu, setShowTypeMenu] = useState(false);
@@ -61,11 +63,13 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
 
   // Check if any remote collaborator is currently editing/locking this block
   const remoteLock = blockLocks[node.id];
-  const isLockedByOther = !!remoteLock && remoteLock.isLocked;
+  // Client/socket ID is the primary identity check to determine lock ownership
+  const isLockedByMe = Boolean(clientId && remoteLock?.lockedBy === clientId);
+  const isLockedByOther = Boolean(remoteLock && remoteLock.isLocked && !isLockedByMe);
 
-  // Check which collaborators are viewing or editing this block
+  // Check which remote collaborators are viewing or editing this block (exclude local user by clientId)
   const activeCollaboratorsOnBlock = collaborators.filter(
-    (c) => c.activeBlockId === node.id
+    (c) => c.activeBlockId === node.id && (clientId ? c.clientId !== clientId : c.userId !== currentUser.userId)
   );
 
   const isLocalActive = activeBlockId === node.id;
@@ -215,7 +219,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           isLockedByOther ? 'is-active-remote' : ''
         }`}
         style={{
-          borderLeftColor: isLockedByOther ? remoteLock.userColor : undefined,
+          borderLeftColor: isLockedByOther ? remoteLock?.userColor : undefined,
         }}
       >
         {/* Remote Presence / Lock Badge */}

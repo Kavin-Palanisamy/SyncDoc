@@ -30,25 +30,30 @@ export class TransformationEngine {
         const childrenHTML = (docNode.children || [])
           .map((child) => this.renderNodeToHTML(child))
           .join('\n');
-        return `<article class="syncdoc-document" data-node-id="${docNode.id}">\n${childrenHTML}\n</article>`;
+        return `<article class="syncdoc-document" data-node-id="${Sanitizer.escapeText(docNode.id)}">\n${childrenHTML}\n</article>`;
       }
 
       case 'heading': {
         const h = node as HeadingNode;
         const level = Math.min(Math.max(h.level || 1, 1), 6);
-        return `<h${level} class="syncdoc-heading syncdoc-h${level}" data-node-id="${h.id}">${h.content || ''}</h${level}>`;
+        return `<h${level} class="syncdoc-heading syncdoc-h${level}" data-node-id="${Sanitizer.escapeText(h.id)}">${h.content || ''}</h${level}>`;
       }
 
       case 'paragraph': {
         const p = node as ParagraphNode;
-        return `<p class="syncdoc-paragraph" data-node-id="${p.id}">${p.content || ''}</p>`;
+        return `<p class="syncdoc-paragraph" data-node-id="${Sanitizer.escapeText(p.id)}">${p.content || ''}</p>`;
+      }
+
+      case 'text': {
+        const t = node as { content?: string };
+        return Sanitizer.escapeText(t.content || '');
       }
 
       case 'code_block': {
         const cb = node as CodeBlockNode;
         const lang = Sanitizer.escapeText(cb.language || 'text');
         const code = Sanitizer.escapeText(cb.content || '');
-        return `<pre class="syncdoc-code-block" data-node-id="${cb.id}"><code class="language-${lang}">${code}</code></pre>`;
+        return `<pre class="syncdoc-code-block" data-node-id="${Sanitizer.escapeText(cb.id)}"><code class="language-${lang}">${code}</code></pre>`;
       }
 
       case 'list': {
@@ -58,7 +63,7 @@ export class TransformationEngine {
         const items = (list.children || [])
           .map((item) => this.renderNodeToHTML(item))
           .join('\n');
-        return `<${tag} class="${listClass}" data-node-id="${list.id}" data-list-type="${list.listType}">\n${items}\n</${tag}>`;
+        return `<${tag} class="${listClass}" data-node-id="${Sanitizer.escapeText(list.id)}" data-list-type="${Sanitizer.escapeText(list.listType || 'bullet')}">\n${items}\n</${tag}>`;
       }
 
       case 'list_item': {
@@ -66,20 +71,19 @@ export class TransformationEngine {
         const text = Sanitizer.escapeText(li.content || '');
         if (li.checked !== undefined) {
           const checkedAttr = li.checked ? 'checked="checked"' : '';
-          return `<li class="syncdoc-task-item" data-node-id="${li.id}"><input type="checkbox" disabled="disabled" ${checkedAttr} class="syncdoc-checkbox" /> <span>${text}</span></li>`;
+          return `<li class="syncdoc-task-item" data-node-id="${Sanitizer.escapeText(li.id)}"><input type="checkbox" disabled="disabled" ${checkedAttr} class="syncdoc-checkbox" /> <span>${text}</span></li>`;
         }
-        return `<li class="syncdoc-list-item" data-node-id="${li.id}">${text}</li>`;
+        return `<li class="syncdoc-list-item" data-node-id="${Sanitizer.escapeText(li.id)}">${text}</li>`;
       }
 
       case 'blockquote': {
         const bq = node as BlockquoteNode;
-        const text = Sanitizer.escapeText(bq.content || '');
-        return `<blockquote class="syncdoc-blockquote" data-node-id="${bq.id}"><p>${text}</p></blockquote>`;
+        return `<blockquote class="syncdoc-blockquote" data-node-id="${Sanitizer.escapeText(bq.id)}"><p>${bq.content || ''}</p></blockquote>`;
       }
 
       case 'divider': {
         const div = node as DividerNode;
-        return `<hr class="syncdoc-divider" data-node-id="${div.id}" />`;
+        return `<hr class="syncdoc-divider" data-node-id="${Sanitizer.escapeText(div.id)}" />`;
       }
 
       default:

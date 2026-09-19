@@ -1,15 +1,25 @@
 import { DocumentModel, IDocumentModel, validateASTTree } from '../models/Document.js';
 import { DocumentVersionModel, IDocumentVersionModel } from '../models/DocumentVersion.js';
-import { createDocumentAST, DocumentNode, countNodes } from '@syncdoc/shared';
+import { createDocumentAST, DocumentNode, countNodes, cloneAST } from '@syncdoc/shared';
 import { TransformationEngine } from '../transformation/TransformationEngine.js';
+import { WebSocketCollaborationServer } from '../collaboration/WebSocketServer.js';
 
 export class DocumentService {
   /**
    * Creates a new document
    */
   public async createDocument(title: string = 'Untitled Document', initialAST?: DocumentNode): Promise<IDocumentModel> {
-    const root = initialAST || createDocumentAST(title);
-    validateASTTree(root);
+    let root: DocumentNode;
+    if (initialAST !== undefined) {
+      if (!initialAST || typeof initialAST !== 'object') {
+        throw new Error('AST root cannot be null or undefined.');
+      }
+      validateASTTree(initialAST);
+      root = initialAST;
+    } else {
+      root = createDocumentAST(title);
+      validateASTTree(root);
+    }
 
     const doc = new DocumentModel({
       title: title || root.title,
@@ -75,12 +85,29 @@ export class DocumentService {
       }
     }
 
-    if (updates.root) {
+    if (updates.root !== undefined) {
+      if (!updates.root || typeof updates.root !== 'object') {
+        throw new Error('AST root cannot be null or undefined.');
+      }
       validateASTTree(updates.root);
       doc.root = updates.root;
-      doc.version = (doc.version || 1) + 1;
-      doc.root.version = doc.version;
+    } else if (doc.root) {
+      validateASTTree(doc.root);
     }
+
+    const latestVersionRecord = await DocumentVersionModel.findOne({ documentId: id })
+      .sort({ versionNumber: -1 })
+      .select('versionNumber')
+      .lean();
+
+    const maxExistingVersion = Math.max(
+      doc.version || 1,
+      latestVersionRecord?.versionNumber || 1
+    );
+
+    const newVersion = maxExistingVersion + 1;
+    doc.version = newVersion;
+    doc.root.version = newVersion;
 
     const saved = await doc.save();
 
@@ -93,6 +120,14 @@ export class DocumentService {
       changeDescription: updates.changeDescription || `Updated document to version ${saved.version}`,
       nodeCount: countNodes(saved.root),
     });
+
+    // Synchronize active in-memory Yjs collaboration session if one exists
+    WebSocketCollaborationServer.getInstance()?.syncSessionFromExternal(
+      saved._id.toString(),
+      saved.root,
+      saved.title,
+      saved.version
+    );
 
     return saved;
   }
@@ -127,7 +162,19 @@ export class DocumentService {
     const doc = await DocumentModel.findById(documentId);
     if (!doc) return null;
 
-    const nextVersion = doc.version + 1;
+    validateASTTree(doc.root);
+
+    const latestVersionRecord = await DocumentVersionModel.findOne({ documentId })
+      .sort({ versionNumber: -1 })
+      .select('versionNumber')
+      .lean();
+
+    const maxExistingVersion = Math.max(
+      doc.version || 1,
+      latestVersionRecord?.versionNumber || 1
+    );
+
+    const nextVersion = maxExistingVersion + 1;
     doc.version = nextVersion;
     doc.root.version = nextVersion;
     await doc.save();
@@ -143,17 +190,32 @@ export class DocumentService {
   }
 
   /**
-   * Rolls back document to a specified version
+   * Rolls back document to a specified version without modifying historical snapshots
    */
   public async rollbackToVersion(documentId: string, versionNumber: number): Promise<IDocumentModel | null> {
-    const versionRecord = await DocumentVersionModel.findOne({ documentId, versionNumber });
+    const versionRecord = await DocumentVersionModel.findOne({ documentId, versionNumber }).lean();
     if (!versionRecord) return null;
 
     const doc = await DocumentModel.findById(documentId);
     if (!doc) return null;
 
-    const newVersionNumber = doc.version + 1;
-    const restoredRoot = versionRecord.astSnapshot;
+    // Deep-clone snapshot so historical snapshot is NEVER mutated
+    const restoredRoot = cloneAST(versionRecord.astSnapshot);
+
+    // Validate the snapshot tree before setting as active
+    validateASTTree(restoredRoot);
+
+    const latestVersionRecord = await DocumentVersionModel.findOne({ documentId })
+      .sort({ versionNumber: -1 })
+      .select('versionNumber')
+      .lean();
+
+    const maxExistingVersion = Math.max(
+      doc.version || 1,
+      latestVersionRecord?.versionNumber || 1
+    );
+
+    const newVersionNumber = maxExistingVersion + 1;
     restoredRoot.version = newVersionNumber;
 
     doc.root = restoredRoot;
@@ -170,6 +232,14 @@ export class DocumentService {
       changeDescription: `Rolled back to version ${versionNumber}`,
       nodeCount: countNodes(restoredRoot),
     });
+
+    // Synchronize active in-memory Yjs collaboration session if one exists
+    WebSocketCollaborationServer.getInstance()?.syncSessionFromExternal(
+      documentId,
+      saved.root,
+      saved.title,
+      saved.version
+    );
 
     return saved;
   }
@@ -212,25 +282,72 @@ export class DocumentService {
   }
 
   /**
-   * Imports Markdown to document
+   * Imports Markdown into document
    */
   public async importMarkdown(markdown: string, title?: string, documentId?: string): Promise<IDocumentModel> {
     const root = TransformationEngine.markdownToAST(markdown, title);
-    validateASTTree(root);
+    return this.importAST(root, title, documentId);
+  }
+
+  /**
+   * Imports an AST document tree directly into a new or existing document
+   */
+  public async importAST(ast: DocumentNode, title?: string, documentId?: string): Promise<IDocumentModel> {
+    if (!ast || typeof ast !== 'object') {
+      throw new Error('AST root cannot be null or undefined.');
+    }
+    validateASTTree(ast);
 
     if (documentId) {
       const existing = await DocumentModel.findById(documentId);
-      if (existing) {
-        existing.root = root;
-        existing.title = root.title;
-        existing.version = existing.version + 1;
-        existing.root.version = existing.version;
-        return existing.save();
+      if (!existing) {
+        throw new Error(`Document with ID '${documentId}' not found.`);
       }
+
+      const latestVersionRecord = await DocumentVersionModel.findOne({ documentId })
+        .sort({ versionNumber: -1 })
+        .select('versionNumber')
+        .lean();
+
+      const maxExistingVersion = Math.max(
+        existing.version || 1,
+        latestVersionRecord?.versionNumber || 1
+      );
+
+      const nextVersion = maxExistingVersion + 1;
+      ast.version = nextVersion;
+      if (title) {
+        ast.title = title;
+      }
+
+      existing.root = ast;
+      existing.title = ast.title;
+      existing.version = nextVersion;
+      const saved = await existing.save();
+
+      await DocumentVersionModel.create({
+        documentId,
+        versionNumber: nextVersion,
+        astSnapshot: ast,
+        author: 'Import Service',
+        changeDescription: `Imported version ${nextVersion}`,
+        nodeCount: countNodes(ast),
+      });
+
+      // Synchronize active in-memory Yjs collaboration session if one exists
+      WebSocketCollaborationServer.getInstance()?.syncSessionFromExternal(
+        documentId,
+        saved.root,
+        saved.title,
+        saved.version
+      );
+
+      return saved;
     }
 
-    return this.createDocument(root.title, root);
+    return this.createDocument(title || ast.title, ast);
   }
 }
 
 export const documentService = new DocumentService();
+

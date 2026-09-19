@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:stress": "vitest run tests/multi-client-stress.test.ts",
+    "test:stress": "vitest run tests/multi-client-stress.test.ts tests/performance-stress.test.ts",
     "typecheck": "npm run typecheck --workspace=shared && npm run typecheck --workspace=server && npm run typecheck --workspace=client",
     "lint": "eslint . --ext .ts,.tsx"
   },

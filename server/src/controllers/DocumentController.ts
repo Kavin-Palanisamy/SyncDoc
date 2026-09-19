@@ -1,9 +1,62 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { documentService } from '../services/DocumentService.js';
 import { ConflictResolutionEngine } from '../conflict/ConflictResolutionEngine.js';
-import { ASTOperation, DocumentNode } from '@syncdoc/shared';
+import { DocumentNode } from '@syncdoc/shared';
+import { validateASTTree } from '../models/Document.js';
 
 export class DocumentController {
+  private static sanitizeErrorMessage(err: unknown): string {
+    if (!err) return 'An internal server error occurred.';
+    let msg = (err as Error).message || String(err);
+    msg = msg.replace(/mongodb(\+srv)?:\/\/[^\s]+/gi, 'mongodb://[REDACTED]');
+    if (
+      msg.includes('MongoServerError') ||
+      msg.includes('MongooseError') ||
+      msg.includes('connection <monitor>') ||
+      msg.includes('TopologyDescription') ||
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('C:\\') ||
+      msg.includes('/Users/') ||
+      msg.includes('/home/') ||
+      msg.includes('node_modules')
+    ) {
+      return 'An internal database error occurred.';
+    }
+    return msg;
+  }
+
+  private static isClientValidationError(err: unknown): boolean {
+    if (!err) return false;
+    if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) {
+      return true;
+    }
+    const msg = (err as Error).message || String(err);
+    if (
+      msg.includes('MongoServerError') ||
+      msg.includes('MongooseError') ||
+      msg.includes('connection <monitor>') ||
+      msg.includes('TopologyDescription') ||
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('C:\\') ||
+      msg.includes('/Users/') ||
+      msg.includes('/home/') ||
+      msg.includes('node_modules')
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  private static handleError(res: Response, err: unknown, defaultStatus: number = 500): void {
+    const isValidation = DocumentController.isClientValidationError(err);
+    const status = isValidation ? 400 : defaultStatus;
+    res.status(status).json({
+      success: false,
+      error: DocumentController.sanitizeErrorMessage(err),
+    });
+  }
+
   private static getParamId(param: string | string[] | undefined): string | null {
     if (!param) return null;
     return Array.isArray(param) ? param[0] || null : param;
@@ -11,25 +64,37 @@ export class DocumentController {
 
   public static async createDocument(req: Request, res: Response): Promise<void> {
     try {
+      if (!req.body || typeof req.body !== 'object') {
+        res.status(400).json({ success: false, error: 'Request body must be a valid JSON object.' });
+        return;
+      }
       const { title, root } = req.body;
+      if (root !== undefined) {
+        if (!root || typeof root !== 'object') {
+          res.status(400).json({
+            success: false,
+            error: 'AST root must be a valid document node object.',
+          });
+          return;
+        }
+        validateASTTree(root);
+      }
+
       const document = await documentService.createDocument(title, root);
       res.status(201).json({
         success: true,
         data: document,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async listDocuments(req: Request, res: Response): Promise<void> {
     try {
       const search = req.query.search as string | undefined;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const limit = parseInt(req.query.limit as string, 10) || 50;
 
       const result = await documentService.listDocuments(search, page, limit);
       res.status(200).json({
@@ -45,7 +110,7 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
@@ -53,8 +118,8 @@ export class DocumentController {
   public static async getDocumentById(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
       const document = await documentService.getDocumentById(id);
@@ -73,7 +138,7 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
@@ -81,11 +146,23 @@ export class DocumentController {
   public static async updateDocument(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
+        return;
+      }
+      if (!req.body || typeof req.body !== 'object') {
+        res.status(400).json({ success: false, error: 'Request body must be an object.' });
         return;
       }
       const { title, root, author, changeDescription } = req.body;
+
+      if (root !== undefined) {
+        if (!root || typeof root !== 'object') {
+          res.status(400).json({ success: false, error: 'Invalid AST root object.' });
+          return;
+        }
+        validateASTTree(root);
+      }
 
       const updated = await documentService.updateDocument(id, {
         title,
@@ -107,18 +184,15 @@ export class DocumentController {
         data: updated,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async deleteDocument(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
       const deleted = await documentService.deleteDocument(id);
@@ -137,7 +211,7 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
@@ -145,8 +219,8 @@ export class DocumentController {
   public static async getDocumentAST(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
       const document = await documentService.getDocumentById(id);
@@ -165,7 +239,7 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
@@ -173,11 +247,21 @@ export class DocumentController {
   public static async updateDocumentAST(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
+        return;
+      }
+      if (!req.body || typeof req.body !== 'object') {
+        res.status(400).json({ success: false, error: 'Request body must be an object.' });
         return;
       }
       const { root, author, changeDescription } = req.body;
+      if (!root || typeof root !== 'object') {
+        res.status(400).json({ success: false, error: 'AST root object is required.' });
+        return;
+      }
+
+      validateASTTree(root);
 
       const updated = await documentService.updateDocument(id, {
         root,
@@ -198,18 +282,20 @@ export class DocumentController {
         data: updated.root,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async getVersionHistory(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
+        return;
+      }
+      const doc = await documentService.getDocumentById(id);
+      if (!doc) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
       const history = await documentService.getVersionHistory(id);
@@ -220,7 +306,7 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
@@ -228,11 +314,11 @@ export class DocumentController {
   public static async createVersionSnapshot(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
-      const { author, changeDescription } = req.body;
+      const { author, changeDescription } = req.body || {};
       const snapshot = await documentService.createVersionSnapshot(id, author, changeDescription);
 
       if (!snapshot) {
@@ -248,22 +334,33 @@ export class DocumentController {
         data: snapshot,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async rollbackToVersion(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      const versionParam = DocumentController.getParamId(req.params.versionNumber);
-      if (!id || !versionParam) {
-        res.status(400).json({ success: false, error: 'Document ID and version number are required' });
+      const versionParam =
+        DocumentController.getParamId(req.params.versionNumber) ||
+        DocumentController.getParamId(req.params.version);
+
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
-      const rolledBack = await documentService.rollbackToVersion(id, parseInt(versionParam, 10));
+      if (!versionParam) {
+        res.status(400).json({ success: false, error: 'Document ID and version number are required.' });
+        return;
+      }
+
+      const versionNumber = parseInt(versionParam, 10);
+      if (isNaN(versionNumber) || versionNumber < 1) {
+        res.status(400).json({ success: false, error: `Invalid version number '${versionParam}'.` });
+        return;
+      }
+
+      const rolledBack = await documentService.rollbackToVersion(id, versionNumber);
 
       if (!rolledBack) {
         res.status(404).json({
@@ -279,31 +376,31 @@ export class DocumentController {
         message: `Successfully rolled back to version ${versionParam}.`,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async exportDocument(req: Request, res: Response): Promise<void> {
     try {
       const id = DocumentController.getParamId(req.params.id);
-      const { format = 'html' } = req.query;
+      const formatParam =
+        DocumentController.getParamId(req.params.format) ||
+        (req.query.format as string) ||
+        'html';
 
-      if (!['html', 'pdf', 'markdown', 'json'].includes(format as string)) {
+      if (!['html', 'pdf', 'markdown', 'json'].includes(formatParam)) {
         res.status(400).json({
           success: false,
-          error: `Unsupported export format '${format}'. Allowed formats: html, pdf, markdown, json.`,
+          error: `Unsupported export format '${formatParam}'. Allowed formats: html, pdf, markdown, json.`,
         });
         return;
       }
 
-      if (!id) {
-        res.status(400).json({ success: false, error: 'Document ID is required' });
+      if (!id || !mongoose.isValidObjectId(id)) {
+        res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
         return;
       }
-      const exportData = await documentService.exportDocument(id, format as 'html' | 'pdf' | 'markdown' | 'json');
+      const exportData = await documentService.exportDocument(id, formatParam as any);
 
       if (!exportData) {
         res.status(404).json({
@@ -319,44 +416,83 @@ export class DocumentController {
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: (error as Error).message,
+        error: DocumentController.sanitizeErrorMessage(error),
       });
     }
   }
 
   public static async importMarkdown(req: Request, res: Response): Promise<void> {
     try {
-      const { markdown, title, documentId } = req.body;
-      if (!markdown || typeof markdown !== 'string') {
+      if (!req.body || typeof req.body !== 'object') {
         res.status(400).json({
           success: false,
-          error: 'Markdown content string is required.',
+          error: 'Request body must be a valid JSON object.',
         });
         return;
       }
 
-      const document = await documentService.importMarkdown(markdown, title, documentId);
+      const { markdown, title, documentId, root, ast } = req.body;
+      const targetDocId = documentId || DocumentController.getParamId(req.params.id) || undefined;
+
+      if (targetDocId && !mongoose.isValidObjectId(targetDocId)) {
+        res.status(404).json({ success: false, error: `Document with ID '${targetDocId}' not found.` });
+        return;
+      }
+
+      const astInput = root || ast;
+
+      let document: any;
+      if (astInput) {
+        document = await documentService.importAST(astInput, title, targetDocId);
+      } else if (typeof markdown === 'string') {
+        document = await documentService.importMarkdown(markdown, title, targetDocId);
+      } else {
+        res.status(400).json({
+          success: false,
+          error: 'Markdown content string or valid AST root is required.',
+        });
+        return;
+      }
+
       res.status(201).json({
         success: true,
         data: document,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 
   public static async mergeConflict(req: Request, res: Response): Promise<void> {
     try {
-      const { baseAST, localOperations, remoteOperations } = req.body as {
-        baseAST: DocumentNode;
-        localOperations: ASTOperation[];
-        remoteOperations: ASTOperation[];
-      };
+      if (!req.body || typeof req.body !== 'object') {
+        res.status(400).json({
+          success: false,
+          error: 'Request body must be a valid JSON object.',
+        });
+        return;
+      }
 
-      if (!baseAST || !Array.isArray(localOperations) || !Array.isArray(remoteOperations)) {
+      const id = DocumentController.getParamId(req.params.id);
+      let baseAST = req.body.baseAST as DocumentNode | undefined;
+      const { localOperations, remoteOperations } = req.body;
+
+      if (id) {
+        if (!mongoose.isValidObjectId(id)) {
+          res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
+          return;
+        }
+        const existingDoc = await documentService.getDocumentById(id);
+        if (!existingDoc) {
+          res.status(404).json({ success: false, error: `Document with ID '${id}' not found.` });
+          return;
+        }
+        if (!baseAST) {
+          baseAST = existingDoc.root;
+        }
+      }
+
+      if (!baseAST || typeof baseAST !== 'object' || !Array.isArray(localOperations) || !Array.isArray(remoteOperations)) {
         res.status(400).json({
           success: false,
           error: 'baseAST, localOperations array, and remoteOperations array are required.',
@@ -364,16 +500,37 @@ export class DocumentController {
         return;
       }
 
+      validateASTTree(baseAST);
+
       const mergeResult = ConflictResolutionEngine.mergeChanges(baseAST, localOperations, remoteOperations);
+
+      if (mergeResult.mergedAST) {
+        validateASTTree(mergeResult.mergedAST);
+      }
+
+      if (id && mergeResult.success) {
+        const updatedDoc = await documentService.updateDocument(id, {
+          root: mergeResult.mergedAST,
+          author: 'Conflict Merge Service',
+          changeDescription: `Merged ${localOperations.length} local and ${remoteOperations.length} remote operations`,
+        });
+        res.status(200).json({
+          success: true,
+          data: {
+            ...mergeResult,
+            document: updatedDoc,
+          },
+        });
+        return;
+      }
+
       res.status(200).json({
         success: true,
         data: mergeResult,
       });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: (error as Error).message,
-      });
+      DocumentController.handleError(res, error, 500);
     }
   }
 }
+

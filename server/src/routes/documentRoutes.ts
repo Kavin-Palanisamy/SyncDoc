@@ -18,13 +18,16 @@ router.put('/documents/:id/ast', DocumentController.updateDocumentAST);
 router.get('/documents/:id/versions', DocumentController.getVersionHistory);
 router.post('/documents/:id/versions', DocumentController.createVersionSnapshot);
 router.post('/documents/:id/versions/:versionNumber/rollback', DocumentController.rollbackToVersion);
+router.post('/documents/:id/rollback/:version', DocumentController.rollbackToVersion);
 
 // Export & Import
 router.get('/documents/:id/export', DocumentController.exportDocument);
+router.get('/documents/:id/export/:format', DocumentController.exportDocument);
 router.post('/documents/import', DocumentController.importMarkdown);
 router.post('/documents/:id/import', DocumentController.importMarkdown);
 
 // Conflict resolution endpoint
 router.post('/conflict/merge', DocumentController.mergeConflict);
+router.post('/documents/:id/merge', DocumentController.mergeConflict);
 
 export default router;

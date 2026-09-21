@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
+import "./DashBoardPage.css";
 
 interface DashboardPageProps {
   onOpenDocument: (documentId: string) => void;
@@ -160,41 +161,55 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+    <div className="dashboard-page min-h-screen text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
       {/* Top Navbar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Layers className="text-white" size={22} />
-            </div>
-            <div>
-              <h1 className="font-display font-black text-xl tracking-tight text-white flex items-center gap-2">
-                SyncDoc <span className="text-xs bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full font-mono">v1.0</span>
-              </h1>
-              <p className="text-xs text-slate-400 font-medium">Collaborative AST Document Engine</p>
-            </div>
-          </div>
+      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
+  <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div className="flex items-center gap-3.5">
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+        <Layers className="text-white" size={22} />
+      </div>
+      <div>
+        <h1 className="font-display font-black text-xl tracking-tight text-white flex items-center gap-2 leading-none">
+          SyncDoc
+          <span className="text-[10px] bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full font-mono tracking-wide">
+            v1.0
+          </span>
+        </h1>
+        <p className="text-xs text-slate-400 font-medium mt-1">Collaborative AST Document Engine</p>
+      </div>
+    </div>
 
-          {/* User Profile Box */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
-              <span className="text-slate-400">User:</span>
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => handleUpdateUserName(e.target.value)}
-                className="bg-transparent text-slate-100 font-semibold outline-none w-28 hover:text-blue-400 focus:text-blue-400"
-                title="Click to change your collaborator display name"
-              />
-            </div>
-          </div>
+    {/* User Profile Box */}
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 bg-slate-900/80 border border-slate-800 pl-2 pr-3 py-1.5 rounded-xl text-xs">
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+          {userName.trim().charAt(0).toUpperCase() || 'U'}
         </div>
-      </header>
+        <input
+          type="text"
+          value={userName}
+          onChange={(e) => handleUpdateUserName(e.target.value)}
+          className="bg-transparent text-slate-100 font-semibold outline-none w-28 hover:text-blue-400 focus:text-blue-400"
+          title="Click to change your collaborator display name"
+        />
+      </div>
+    </div>
+  </div>
+</header>
 
       {/* Hero / Quick Actions */}
-      <section className="max-w-7xl mx-auto px-6 pt-10 pb-6 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-10">
+      <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 w-full">
+  <div className="mb-6">
+    <h2 className="text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1">
+      Start creating
+    </h2>
+    <p className="text-sm text-slate-400">
+      Spin up a new document or import existing content.
+    </p>
+  </div>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
           {/* Quick Create Blank */}
           <div
             onClick={() => handleCreateFromTemplate('blank')}
@@ -289,7 +304,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         </div>
 
         {/* Search and Catalog Filter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
@@ -309,6 +324,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         </div>
 
         {/* Document Cards Grid */}
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-800/70">
+          <h2 className="text-[11px] uppercase font-bold tracking-wider text-slate-500">
+            Your documents
+          </h2>
+          {!loading && (
+            <span className="text-[11px] text-slate-600 font-mono">
+              {documents.length} {documents.length === 1 ? 'document' : 'documents'}
+            </span>
+          )}
+        </div>
         {loading ? (
           <div className="text-center py-20 text-slate-500 text-sm">
             <Zap className="animate-spin inline-block text-blue-500 mb-2" size={24} />
@@ -331,7 +356,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {documents.map((doc) => {
               const nodeCount = (doc.root?.children?.length || 0) + 1;
               const snippet =

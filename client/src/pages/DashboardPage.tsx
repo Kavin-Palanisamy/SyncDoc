@@ -164,19 +164,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
     <div className="dashboard-page min-h-screen text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
       {/* Top Navbar */}
       <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
-  <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-    <div className="flex items-center gap-3.5">
+  <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
+    <div className="dash-brand-row flex items-center gap-3.5">
       <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
         <Layers className="text-white" size={22} />
       </div>
       <div>
-        <h1 className="font-display font-black text-xl tracking-tight text-white flex items-center gap-2 leading-none">
+        <h1 className="dash-brand font-display text-white flex items-center gap-2">
           SyncDoc
-          <span className="text-[10px] bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full font-mono tracking-wide">
+          <span className="dash-brand-badge bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full font-mono">
             v1.0
           </span>
         </h1>
-        <p className="text-xs text-slate-400 font-medium mt-1">Collaborative AST Document Engine</p>
+        <p className="dash-brand-subtitle text-slate-400">Collaborative AST Document Engine</p>
       </div>
     </div>
 
@@ -201,15 +201,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
       {/* Hero / Quick Actions */}
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 w-full">
   <div className="mb-6">
-    <h2 className="text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1">
+    <h2 className="dash-eyebrow text-slate-500">
       Start creating
     </h2>
-    <p className="text-sm text-slate-400">
+    <p className="dash-eyebrow-desc text-slate-400">
       Spin up a new document or import existing content.
     </p>
   </div>
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
+  <div className="dash-hero-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Quick Create Blank */}
           <div
             onClick={() => handleCreateFromTemplate('blank')}
@@ -219,15 +219,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <div className="w-10 h-10 rounded-lg bg-blue-950/80 text-blue-400 flex items-center justify-center border border-blue-800/60 group-hover:scale-110 transition-transform">
                 <Plus size={20} />
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900">
+              <span className="dash-card-tag text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900">
                 Quick Start
               </span>
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-white group-hover:text-blue-400 transition-colors">
+              <h3 className="dash-card-title font-display text-white group-hover:text-cyan-400 transition-colors">
                 New Blank Document
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="dash-card-desc text-slate-400">
                 Start from a clean slate with block-based editing and Yjs real-time sync.
               </p>
             </div>
@@ -242,15 +242,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <div className="w-10 h-10 rounded-lg bg-purple-950/80 text-purple-400 flex items-center justify-center border border-purple-800/60 group-hover:scale-110 transition-transform">
                 <BookOpen size={20} />
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-900">
+              <span className="dash-card-tag text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-900">
                 Template
               </span>
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-white group-hover:text-purple-400 transition-colors">
+              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 Architecture RFC
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="dash-card-desc text-slate-400">
                 Technical design spec with problem statement, architecture, and code blocks.
               </p>
             </div>
@@ -270,10 +270,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               </span>
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-white group-hover:text-cyan-400 transition-colors">
+              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 API Technical Spec
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="dash-card-desc text-slate-400">
                 Pre-configured structural template with endpoints, methods, and nested lists.
               </p>
             </div>
@@ -288,15 +288,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <div className="w-10 h-10 rounded-lg bg-emerald-950/80 text-emerald-400 flex items-center justify-center border border-emerald-800/60 group-hover:scale-110 transition-transform">
                 <Upload size={20} />
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900">
+              <span className="dash-card-tag text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900">
                 Converter
               </span>
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-white group-hover:text-emerald-400 transition-colors">
+              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 Import Markdown to AST
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="dash-card-desc text-slate-400">
                 Parse existing Markdown files into fully validated structural AST documents.
               </p>
             </div>
@@ -324,12 +324,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         </div>
 
         {/* Document Cards Grid */}
-        <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-800/70">
-          <h2 className="text-[11px] uppercase font-bold tracking-wider text-slate-500">
+        <div className="dash-docs-header flex items-center justify-between border-b border-slate-800/70">
+          <h2 className="dash-eyebrow text-slate-500">
             Your documents
           </h2>
           {!loading && (
-            <span className="text-[11px] text-slate-600 font-mono">
+            <span className="dash-meta-count text-slate-600 font-mono">
               {documents.length} {documents.length === 1 ? 'document' : 'documents'}
             </span>
           )}
@@ -342,10 +342,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         ) : documents.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-slate-800 rounded-2xl p-8">
             <FileText className="mx-auto text-slate-600 mb-3" size={36} />
-            <h3 className="text-slate-300 font-display font-semibold text-base mb-1">
+            <h3 className="dash-card-title text-slate-300 font-display mb-1">
               No documents found
             </h3>
-            <p className="text-slate-500 text-xs mb-4">
+            <p className="dash-card-desc text-slate-500 mb-4">
               Create a new document from scratch or choose a template above to get started.
             </p>
             <button
@@ -356,7 +356,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="dash-doc-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {documents.map((doc) => {
               const nodeCount = (doc.root?.children?.length || 0) + 1;
               const snippet =
@@ -372,7 +372,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-display font-bold text-base text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
+                      <h3 className="dash-card-title text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
                         {doc.title}
                       </h3>
                       <button
@@ -384,16 +384,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                       </button>
                     </div>
 
-                    <p className="text-xs text-slate-400 line-clamp-2 mb-4">
+                    <p className="dash-card-desc text-slate-400 line-clamp-2 mb-4">
                       {snippet}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1 font-mono text-cyan-400">
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="dash-card-meta flex items-center gap-1 font-mono text-cyan-400">
                       <Layers size={11} /> v{doc.version} &bull; {nodeCount} blocks
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="dash-card-meta flex items-center gap-1 text-slate-500">
                       <Clock size={11} /> {new Date(doc.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -408,10 +408,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
       {isImportModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div className="dash-modal-head border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Upload className="text-emerald-400" size={18} />
-                <h3 className="font-display font-bold text-slate-100 text-base">
+                <h3 className="dash-card-title font-display text-slate-100">
                   Import Markdown into Structural AST
                 </h3>
               </div>
@@ -423,9 +423,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="dash-modal-body">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="dash-card-tag block normal-case text-slate-300 mb-1">
                   Document Title (Optional)
                 </label>
                 <input
@@ -438,7 +438,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="dash-card-tag block normal-case text-slate-300 mb-1">
                   Markdown Content
                 </label>
                 <textarea
@@ -451,7 +451,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               </div>
             </div>
 
-            <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-end gap-2">
+            <div className="dash-modal-foot bg-slate-950/60 border-t border-slate-800 flex items-center justify-end gap-2">
               <button
                 onClick={() => setIsImportModalOpen(false)}
                 className="btn btn-ghost text-xs"

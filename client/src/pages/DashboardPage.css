@@ -197,3 +197,145 @@
     border-radius: 14px;
   }
 }
+
+/* ---------- Typography & spacing system ---------- */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+}
+
+/* Brand block */
+.dash-brand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dash-brand {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.dash-brand-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.dash-brand-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+/* Section eyebrow (Start creating / Your documents) */
+.dash-section-header {
+  margin-bottom: var(--space-5);
+}
+
+.dash-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+
+.dash-eyebrow-desc {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.dash-meta-count {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Cards */
+.dash-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.dash-card-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: var(--space-1);
+}
+
+.dash-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.dash-card-meta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+/* Rhythm between major regions */
+.dash-header-inner {
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-5);
+}
+
+.dash-main {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-10);
+}
+
+.dash-hero-grid {
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.dash-search-row {
+  margin-bottom: var(--space-6);
+}
+
+.dash-docs-header {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+}
+
+.dash-doc-grid {
+  gap: var(--space-5);
+}
+
+/* Modal rhythm */
+.dash-modal-head {
+  padding: var(--space-4);
+}
+
+.dash-modal-body {
+  padding: var(--space-6);
+}
+
+.dash-modal-body > * + * {
+  margin-top: var(--space-4);
+}
+
+.dash-modal-foot {
+  padding: var(--space-4);
+}

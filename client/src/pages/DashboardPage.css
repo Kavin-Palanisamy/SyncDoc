@@ -1,0 +1,341 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  /* Base */
+  --bg-void: #06070a;
+  --bg-deep: #0a0c11;
+
+  /* Surfaces */
+  --surface-glass: rgba(13, 15, 20, 0.66);
+  --surface-glass-hover: rgba(18, 20, 27, 0.78);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-soft-hover: rgba(255, 255, 255, 0.16);
+
+  /* Accent 1 — Verdigris (primary / CTA / focus) */
+  --verdigris-300: #8fe3d3;
+  --verdigris-400: #4fc7b8;
+  --verdigris-500: #2f9e93;
+
+  /* Accent 2 — Champagne gold (secondary / highlights) */
+  --gold-300: #f0dcae;
+  --gold-400: #d9b26a;
+  --gold-500: #b8873e;
+
+  /* Accent 3 — Deep indigo (ambient glow / depth) */
+  --indigo-400: #6b74c9;
+  --indigo-500: #454d9e;
+
+  /* Text */
+  --text-primary: #f4f5f7;
+  --text-secondary: #b3b6c2;
+  --text-muted: #767a89;
+
+  /* Feedback */
+  --danger: #f0847e;
+  --danger-bg: rgba(240, 132, 126, 0.1);
+}
+
+/* ---------- Page shell ---------- */
+
+.dashboard-page {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  isolation: isolate;
+  color: var(--text-primary);
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(79, 199, 184, 0.1) 0%, transparent 38%),
+    radial-gradient(circle at 88% 6%, rgba(69, 77, 158, 0.14) 0%, transparent 42%),
+    radial-gradient(circle at 50% 100%, rgba(184, 135, 62, 0.05) 0%, transparent 38%),
+    var(--bg-void);
+}
+
+.dashboard-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.dashboard-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Shared component classes referenced in DashboardPage.tsx ---------- */
+
+.font-display {
+  font-family: "Manrope", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.glass-card {
+  position: relative;
+  border-radius: 16px;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-soft);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 20px 40px -20px rgba(0, 0, 0, 0.8);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-soft-hover);
+  background: var(--surface-glass-hover);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 24px 48px -20px rgba(0, 0, 0, 0.85),
+    0 0 40px -22px rgba(79, 199, 184, 0.35);
+  transform: translateY(-2px);
+}
+
+.input-field {
+  width: 100%;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field::placeholder {
+  color: #6b6f7d;
+}
+
+.input-field:hover {
+  border-color: var(--border-soft-hover);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: rgba(79, 199, 184, 0.6);
+  background: rgba(79, 199, 184, 0.06);
+  box-shadow: 0 0 0 3px rgba(79, 199, 184, 0.14);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  color: #06110e;
+  background: linear-gradient(135deg, #9ff0e1 0%, #4fc7b8 45%, #454d9e 130%);
+  box-shadow: 0 10px 24px -8px rgba(79, 199, 184, 0.5);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 14px 30px -8px rgba(79, 199, 184, 0.65);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: var(--border-soft);
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-soft-hover);
+}
+
+/* ---------- Scrollbar polish (optional, purely cosmetic) ---------- */
+
+.dashboard-page ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dashboard-page ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-page ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.dashboard-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 480px) {
+  .glass-card {
+    border-radius: 14px;
+  }
+}
+
+/* ---------- Typography & spacing system ---------- */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+}
+
+/* Brand block */
+.dash-brand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dash-brand {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.dash-brand-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.dash-brand-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+/* Section eyebrow (Start creating / Your documents) */
+.dash-section-header {
+  margin-bottom: var(--space-5);
+}
+
+.dash-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+
+.dash-eyebrow-desc {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.dash-meta-count {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Cards */
+.dash-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.dash-card-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: var(--space-1);
+}
+
+.dash-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.dash-card-meta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+/* Rhythm between major regions */
+.dash-header-inner {
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-5);
+}
+
+.dash-main {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-10);
+}
+
+.dash-hero-grid {
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.dash-search-row {
+  margin-bottom: var(--space-6);
+}
+
+.dash-docs-header {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+}
+
+.dash-doc-grid {
+  gap: var(--space-5);
+}
+
+/* Modal rhythm */
+.dash-modal-head {
+  padding: var(--space-4);
+}
+
+.dash-modal-body {
+  padding: var(--space-6);
+}
+
+.dash-modal-body > * + * {
+  margin-top: var(--space-4);
+}
+
+.dash-modal-foot {
+  padding: var(--space-4);
+}

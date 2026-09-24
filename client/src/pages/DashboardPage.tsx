@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
-import "./DashBoardPage.css";
+   import "./DashboardPage.css";
 
 interface DashboardPageProps {
   onOpenDocument: (documentId: string) => void;
@@ -166,7 +166,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
       <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
   <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
     <div className="dash-brand-row flex items-center gap-3.5">
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+      <div className="dash-brand-icon">
         <Layers className="text-white" size={22} />
       </div>
       <div>
@@ -200,20 +200,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
 
       {/* Hero / Quick Actions */}
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 w-full">
-  <div className="mb-6">
-    <h2 className="dash-eyebrow text-slate-500">
+  <div className="dash-section-header">
+    <h2 className="dash-eyebrow text-[var(--text-muted)]">
       Start creating
     </h2>
-    <p className="dash-eyebrow-desc text-slate-400">
+    <p className="dash-eyebrow-desc text-[var(--text-secondary)]">
       Spin up a new document or import existing content.
     </p>
   </div>
 
-  <div className="dash-hero-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+  <div className="dash-hero-grid">
           {/* Quick Create Blank */}
           <div
             onClick={() => handleCreateFromTemplate('blank')}
-            className="glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-lg bg-blue-950/80 text-blue-400 flex items-center justify-center border border-blue-800/60 group-hover:scale-110 transition-transform">
@@ -227,7 +227,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <h3 className="dash-card-title font-display text-white group-hover:text-cyan-400 transition-colors">
                 New Blank Document
               </h3>
-              <p className="dash-card-desc text-slate-400">
+              <p className="dash-card-desc text-[var(--text-secondary)]">
                 Start from a clean slate with block-based editing and Yjs real-time sync.
               </p>
             </div>
@@ -236,7 +236,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Template: RFC Spec */}
           <div
             onClick={() => handleCreateFromTemplate('rfc')}
-            className="glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-lg bg-purple-950/80 text-purple-400 flex items-center justify-center border border-purple-800/60 group-hover:scale-110 transition-transform">
@@ -250,7 +250,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 Architecture RFC
               </h3>
-              <p className="dash-card-desc text-slate-400">
+              <p className="dash-card-desc text-[var(--text-secondary)]">
                 Technical design spec with problem statement, architecture, and code blocks.
               </p>
             </div>
@@ -259,7 +259,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Template: API Spec */}
           <div
             onClick={() => handleCreateFromTemplate('api')}
-            className="glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-lg bg-cyan-950/80 text-cyan-400 flex items-center justify-center border border-cyan-800/60 group-hover:scale-110 transition-transform">
@@ -273,7 +273,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 API Technical Spec
               </h3>
-              <p className="dash-card-desc text-slate-400">
+              <p className="dash-card-desc text-[var(--text-secondary)]">
                 Pre-configured structural template with endpoints, methods, and nested lists.
               </p>
             </div>
@@ -282,7 +282,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Markdown Importer */}
           <div
             onClick={() => setIsImportModalOpen(true)}
-            className="glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-lg bg-emerald-950/80 text-emerald-400 flex items-center justify-center border border-emerald-800/60 group-hover:scale-110 transition-transform">
@@ -296,7 +296,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
                 Import Markdown to AST
               </h3>
-              <p className="dash-card-desc text-slate-400">
+              <p className="dash-card-desc text-[var(--text-secondary)]">
                 Parse existing Markdown files into fully validated structural AST documents.
               </p>
             </div>
@@ -304,7 +304,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         </div>
 
         {/* Search and Catalog Filter */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <div className="dash-search-row flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
@@ -312,7 +312,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               placeholder="Search documents by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-field pl-10 text-xs"
+              className="dashboard-input pl-10 text-xs"
             />
           </div>
 
@@ -350,47 +350,49 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             </p>
             <button
               onClick={() => handleCreateFromTemplate('blank')}
-              className="btn btn-primary text-xs"
+              className="dashboard-btn dashboard-btn-primary text-xs"
             >
               <Plus size={14} /> Create First Document
             </button>
           </div>
         ) : (
-          <div className="dash-doc-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {documents.map((doc) => {
+          <div className="dash-doc-grid">
+                        {documents.map((doc, index) => {
               const nodeCount = (doc.root?.children?.length || 0) + 1;
               const snippet =
                 (doc.root?.children?.[1] as { content?: string } | undefined)?.content ||
                 (doc.root?.children?.[0] as { content?: string } | undefined)?.content ||
                 'Empty document';
+              const accentClass = ['doc-accent-verdigris', 'doc-accent-gold', 'doc-accent-indigo'][index % 3];
 
               return (
                 <div
                   key={doc._id}
                   onClick={() => onOpenDocument(doc._id)}
-                  className="glass-card p-5 cursor-pointer flex flex-col justify-between group relative"
+                  className={`doc-card ${accentClass} cursor-pointer group`}
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="dash-card-title text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
-                        {doc.title}
-                      </h3>
-                      <button
-                        onClick={(e) => handleDeleteDocument(doc._id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-all"
-                        title="Delete Document"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                  <button
+                    onClick={(e) => handleDeleteDocument(doc._id, e)}
+                    className="doc-card-delete opacity-0 group-hover:opacity-100 p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-all"
+                    title="Delete Document"
+                  >
+                    <Trash2 size={14} />
+                  </button>
 
-                    <p className="dash-card-desc text-slate-400 line-clamp-2 mb-4">
-                      {snippet}
-                    </p>
+                  <div className="doc-card-icon">
+                    <FileText size={18} />
                   </div>
 
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="dash-card-meta flex items-center gap-1 font-mono text-cyan-400">
+                  <h3 className="dash-card-title text-slate-100 group-hover:text-white transition-colors line-clamp-1">
+                    {doc.title}
+                  </h3>
+
+                  <p className="dash-card-desc text-slate-400 line-clamp-2">
+                    {snippet}
+                  </p>
+
+                  <div className="doc-card-footer">
+                    <span className="dash-card-meta doc-card-meta-accent flex items-center gap-1 font-mono">
                       <Layers size={11} /> v{doc.version} &bull; {nodeCount} blocks
                     </span>
                     <span className="dash-card-meta flex items-center gap-1 text-slate-500">
@@ -433,7 +435,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                   placeholder="Auto-detected from first heading if left blank"
                   value={importTitle}
                   onChange={(e) => setImportTitle(e.target.value)}
-                  className="input-field text-xs"
+                  className="dashboard-input text-xs"
                 />
               </div>
 
@@ -446,7 +448,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                   placeholder="# Technical Spec&#10;&#10;Write markdown content here..."
                   value={importMarkdownText}
                   onChange={(e) => setImportMarkdownText(e.target.value)}
-                  className="input-field font-mono text-xs"
+                  className="dashboard-input font-mono text-xs"
                 />
               </div>
             </div>
@@ -454,14 +456,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             <div className="dash-modal-foot bg-slate-950/60 border-t border-slate-800 flex items-center justify-end gap-2">
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="btn btn-ghost text-xs"
+                className="dashboard-btn dashboard-btn-ghost text-xs"
               >
                 Cancel
               </button>
               <button
                 disabled={!importMarkdownText.trim()}
                 onClick={handleImportMarkdownSubmit}
-                className="btn btn-primary text-xs"
+                className="dashboard-btn dashboard-btn-primary text-xs"
               >
                 <Upload size={14} /> Parse & Create Document
               </button>

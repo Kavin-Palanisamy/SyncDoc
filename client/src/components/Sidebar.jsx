@@ -2,6 +2,22 @@ import React, { useState } from "react";
 import { Layers, Plus, FileText, Settings, User, Menu, X } from "lucide-react";
 import "./Sidebar.css";
 
+/**
+ * @typedef {Object} SidebarDocument
+ * @property {string} _id
+ * @property {string} title
+ */
+
+/**
+ * @typedef {Object} SidebarProps
+ * @property {SidebarDocument[]} documents
+ * @property {string|null} activeDocumentId
+ * @property {(documentId: string) => void} onSelectDocument
+ * @property {() => void} onNewDocument
+ */
+
+/** @param {SidebarProps} props */
+
 export default function Sidebar({
   documents = [],
   activeDocumentId = null,

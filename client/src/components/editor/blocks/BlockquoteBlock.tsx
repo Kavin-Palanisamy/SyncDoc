@@ -19,12 +19,19 @@ export const BlockquoteBlock: React.FC<BlockquoteBlockProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (contentRef.current && contentRef.current.innerText !== (node.content || '')) {
-      contentRef.current.innerText = node.content || '';
+    if (!contentRef.current) return;
+    const isFocused = document.activeElement === contentRef.current;
+    const currentText = contentRef.current.innerText;
+    const targetText = node.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        contentRef.current.innerText = targetText;
+      }
     }
   }, [node.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (contentRef.current) {
       onContentChange(contentRef.current.innerText);
     }
@@ -40,7 +47,7 @@ export const BlockquoteBlock: React.FC<BlockquoteBlockProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         data-placeholder="Quote text..."
-        className={`block-editable ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+        className={`block-editable ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
     </div>
   );

@@ -49,7 +49,8 @@ export class DocumentService {
   public async listDocuments(search?: string, page: number = 1, limit: number = 20): Promise<{ documents: IDocumentModel[]; total: number }> {
     const query: Record<string, unknown> = {};
     if (search && search.trim() !== '') {
-      query.title = { $regex: search.trim(), $options: 'i' };
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.title = { $regex: escaped, $options: 'i' };
     }
 
     const skip = (page - 1) * limit;

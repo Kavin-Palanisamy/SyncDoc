@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ASTNode,
   HeadingNode,
@@ -54,6 +54,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
     activeBlockId,
     blockLocks,
     collaborators,
+    currentUser,
+    clientId,
   } = useCollaboration();
 
   const [showTypeMenu, setShowTypeMenu] = useState(false);
@@ -61,22 +63,59 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
 
   // Check if any remote collaborator is currently editing/locking this block
   const remoteLock = blockLocks[node.id];
-  const isLockedByOther = !!remoteLock && remoteLock.isLocked;
+  const isLockedByMe = Boolean(
+    clientId && remoteLock?.lockedBy === clientId
+  );
 
-  // Check which collaborators are viewing or editing this block
+  const isLockedByOther = Boolean(
+    remoteLock &&
+    remoteLock.isLocked &&
+    !isLockedByMe
+  );
+
+  // Check which remote collaborators are viewing or editing this block (exclude local user by clientId)
   const activeCollaboratorsOnBlock = collaborators.filter(
-    (c) => c.activeBlockId === node.id
+    (c) => c.activeBlockId === node.id && (clientId ? c.clientId !== clientId : c.userId !== currentUser.userId)
   );
 
   const isLocalActive = activeBlockId === node.id;
 
+  // Blur grace period timer (1200ms) to prevent premature lock release during tab/window switching
+  const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeBlockIdRef = useRef<string | null>(activeBlockId);
+  activeBlockIdRef.current = activeBlockId;
+
   const handleFocus = () => {
+    if (isLockedByOther) return;
+    // Cancel pending unlock if user returns to this block
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
     setBlockFocus(node.id, 'editing');
   };
 
   const handleBlur = () => {
-    setBlockFocus(null, 'idle');
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = setTimeout(() => {
+      // Only release if this block is still the active block being edited
+      if (activeBlockIdRef.current === node.id) {
+        setBlockFocus(null, 'idle');
+      }
+      blurTimeoutRef.current = null;
+    }, 1200);
   };
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const renderContent = () => {
     switch (node.type) {
@@ -85,8 +124,14 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           <HeadingBlock
             node={node as HeadingNode}
             isLocked={isLockedByOther}
-            onContentChange={(content) => updateBlockContent(node.id, content)}
-            onLevelChange={(level) => updateBlockProperties(node.id, { level })}
+            onContentChange={(content) => {
+              if (isLockedByOther) return;
+              updateBlockContent(node.id, content);
+            }}
+            onLevelChange={(level) => {
+              if (isLockedByOther) return;
+              updateBlockProperties(node.id, { level });
+            }}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -97,7 +142,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           <ParagraphBlock
             node={node as ParagraphNode}
             isLocked={isLockedByOther}
-            onContentChange={(content) => updateBlockContent(node.id, content)}
+            onContentChange={(content) => {
+              if (isLockedByOther) return;
+              updateBlockContent(node.id, content);
+            }}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -108,8 +156,14 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           <CodeBlock
             node={node as CodeBlockNode}
             isLocked={isLockedByOther}
-            onContentChange={(content) => updateBlockContent(node.id, content)}
-            onLanguageChange={(language) => updateBlockProperties(node.id, { language })}
+            onContentChange={(content) => {
+              if (isLockedByOther) return;
+              updateBlockContent(node.id, content);
+            }}
+            onLanguageChange={(language) => {
+              if (isLockedByOther) return;
+              updateBlockProperties(node.id, { language });
+            }}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -120,7 +174,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           <ListBlock
             node={node as ListNode}
             isLocked={isLockedByOther}
-            onUpdateItems={(items: ListItemNode[]) => updateBlockProperties(node.id, { children: items })}
+            onUpdateItems={(items: ListItemNode[]) => {
+              if (isLockedByOther) return;
+              updateBlockProperties(node.id, { children: items });
+            }}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -131,7 +188,10 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           <BlockquoteBlock
             node={node as BlockquoteNode}
             isLocked={isLockedByOther}
-            onContentChange={(content) => updateBlockContent(node.id, content)}
+            onContentChange={(content) => {
+              if (isLockedByOther) return;
+              updateBlockContent(node.id, content);
+            }}
             onFocus={handleFocus}
             onBlur={handleBlur}
           />
@@ -212,22 +272,43 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
       {/* Main Block Item */}
       <div
         className={`block-wrapper ${isLocalActive ? 'is-active-local' : ''} ${
-          isLockedByOther ? 'is-active-remote' : ''
+          isLockedByOther ? 'is-locked-remote is-active-remote' : ''
         }`}
         style={{
-          borderLeftColor: isLockedByOther ? remoteLock.userColor : undefined,
+          borderLeftColor: isLockedByOther ? (remoteLock?.userColor || '#3b82f6') : undefined,
         }}
       >
-        {/* Remote Presence / Lock Badge */}
-        {activeCollaboratorsOnBlock.length > 0 && (
+        {/* Prominent Remote Lock Banner directly above block content */}
+        {isLockedByOther && remoteLock && (
+          <div
+            className="remote-lock-banner"
+            style={{
+              borderColor: remoteLock.userColor ? `${remoteLock.userColor}40` : 'rgba(59, 130, 246, 0.25)',
+            }}
+          >
+            <div
+              className="remote-lock-badge"
+              style={{ backgroundColor: remoteLock.userColor || '#3b82f6' }}
+            >
+              <Lock size={11} className="text-white shrink-0" />
+              <span className="text-white font-semibold text-xs">
+                Locked by {remoteLock.lockedByName || 'Collaborator'}
+              </span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              Editing this block &bull; Read-only
+            </span>
+          </div>
+        )}
+
+        {/* Remote Viewing Presence Badge (when viewing and not locked) */}
+        {!isLockedByOther && activeCollaboratorsOnBlock.length > 0 && (
           <div
             className="remote-presence-badge"
             style={{ backgroundColor: activeCollaboratorsOnBlock[0]?.userColor || '#3b82f6' }}
           >
-            {isLockedByOther && <Lock size={10} />}
             <span>
-              {activeCollaboratorsOnBlock.map((c) => c.userName).join(', ')}{' '}
-              {isLockedByOther ? 'editing' : 'viewing'}
+              {activeCollaboratorsOnBlock.map((c) => c.userName).join(', ')} viewing
             </span>
           </div>
         )}
@@ -235,23 +316,27 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
         {/* Left Actions Toolbar */}
         <div className="block-actions">
           <button
-            disabled={isFirst}
-            onClick={() => moveBlock(node.id, 'up')}
+            disabled={isFirst || isLockedByOther}
+            onClick={() => {
+              if (!isLockedByOther) moveBlock(node.id, 'up');
+            }}
             className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white ${
-              isFirst ? 'opacity-30 cursor-not-allowed' : ''
+              isFirst || isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
             }`}
-            title="Move block up"
+            title={isLockedByOther ? 'Block is locked' : 'Move block up'}
           >
             <ChevronUp size={12} />
           </button>
 
           <button
-            disabled={isLast}
-            onClick={() => moveBlock(node.id, 'down')}
+            disabled={isLast || isLockedByOther}
+            onClick={() => {
+              if (!isLockedByOther) moveBlock(node.id, 'down');
+            }}
             className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white ${
-              isLast ? 'opacity-30 cursor-not-allowed' : ''
+              isLast || isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
             }`}
-            title="Move block down"
+            title={isLockedByOther ? 'Block is locked' : 'Move block down'}
           >
             <ChevronDown size={12} />
           </button>
@@ -259,14 +344,19 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           {/* Type switcher dropdown trigger */}
           <div className="relative">
             <button
-              onClick={() => setShowTypeMenu(!showTypeMenu)}
-              className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-cyan-400"
-              title="Change block type"
+              disabled={isLockedByOther}
+              onClick={() => {
+                if (!isLockedByOther) setShowTypeMenu(!showTypeMenu);
+              }}
+              className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-cyan-400 ${
+                isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
+              }`}
+              title={isLockedByOther ? 'Block is locked' : 'Change block type'}
             >
               <Type size={12} />
             </button>
 
-            {showTypeMenu && (
+            {showTypeMenu && !isLockedByOther && (
               <div className="absolute left-full top-0 ml-1 z-30 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1 w-32 animate-fade-in">
                 <button
                   onClick={() => {
@@ -327,9 +417,14 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           </div>
 
           <button
-            onClick={() => deleteBlock(node.id)}
-            className="p-1 rounded hover:bg-rose-950/60 text-slate-400 hover:text-rose-400"
-            title="Delete block"
+            disabled={isLockedByOther}
+            onClick={() => {
+              if (!isLockedByOther) deleteBlock(node.id);
+            }}
+            className={`p-1 rounded hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 ${
+              isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
+            }`}
+            title={isLockedByOther ? 'Block is locked' : 'Delete block'}
           >
             <Trash2 size={12} />
           </button>

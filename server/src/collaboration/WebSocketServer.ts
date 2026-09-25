@@ -28,6 +28,7 @@ export class WebSocketCollaborationServer {
   private static instance: WebSocketCollaborationServer | null = null;
   private io: SocketIOServer;
   private sessions: Map<string, DocumentSession> = new Map();
+  private sessionInitPromises: Map<string, Promise<DocumentSession>> = new Map();
 
   public static getInstance(): WebSocketCollaborationServer | null {
     return WebSocketCollaborationServer.instance;
@@ -226,6 +227,25 @@ export class WebSocketCollaborationServer {
         const session = this.sessions.get(documentId);
         if (!session || !currentUser) return;
 
+        // Check if requested block is already locked by another socket
+        if (blockId && editingState === 'editing') {
+          const existingLock = session.blockLocks.get(blockId);
+          if (existingLock && existingLock.isLocked && existingLock.lockedBy !== socket.id) {
+            console.log(
+              `[WebSocket] Lock rejected: block '${blockId}' already locked by socket '${existingLock.lockedBy}' (${existingLock.lockedByName}). Rejected request from '${socket.id}' (${currentUser.userName}).`
+            );
+            const locksRecord: Record<string, BlockLockState> = {};
+            for (const [bId, lock] of session.blockLocks.entries()) {
+              locksRecord[bId] = lock;
+            }
+            socket.emit('block-state-sync', {
+              documentId,
+              locks: locksRecord,
+            });
+            return;
+          }
+        }
+
         currentUser.activeBlockId = blockId;
         currentUser.editingState = editingState;
         currentUser.lastActive = Date.now();
@@ -325,46 +345,58 @@ export class WebSocketCollaborationServer {
    * Retrieves or initializes a Yjs document session from database
    */
   public async getOrCreateSession(documentId: string): Promise<DocumentSession> {
-    let session = this.sessions.get(documentId);
-    if (session) return session;
+    const existing = this.sessions.get(documentId);
+    if (existing) return existing;
 
-    const ydoc = new Y.Doc();
-    session = {
-      doc: ydoc,
-      activeUsers: new Map(),
-      blockLocks: new Map(),
-      saveTimeout: null,
-      isSaving: false,
-      hasPendingSave: false,
-      hasUnsavedChanges: false,
-      changeCount: 0,
-    };
-    this.sessions.set(documentId, session);
+    const inFlight = this.sessionInitPromises.get(documentId);
+    if (inFlight) return inFlight;
 
-    // Populate Yjs doc from MongoDB
-    try {
-      const docRecord = await DocumentModel.findById(documentId);
-      if (docRecord && docRecord.root) {
-        const yNodesArray = ydoc.getArray<ASTNode>('nodes');
-        const yMetaMap = ydoc.getMap<unknown>('meta');
+    const initPromise = (async () => {
+      try {
+        const ydoc = new Y.Doc();
+        const session: DocumentSession = {
+          doc: ydoc,
+          activeUsers: new Map(),
+          blockLocks: new Map(),
+          saveTimeout: null,
+          isSaving: false,
+          hasPendingSave: false,
+          hasUnsavedChanges: false,
+          changeCount: 0,
+        };
 
-        ydoc.transact(() => {
-          yMetaMap.set('title', docRecord.title);
-          yMetaMap.set('version', docRecord.version);
-          yMetaMap.set('id', docRecord.root.id);
+        // Populate Yjs doc from MongoDB BEFORE publishing session
+        try {
+          const docRecord = await DocumentModel.findById(documentId);
+          if (docRecord && docRecord.root) {
+            const yNodesArray = ydoc.getArray<ASTNode>('nodes');
+            const yMetaMap = ydoc.getMap<unknown>('meta');
 
-          // Clear and insert children
-          yNodesArray.delete(0, yNodesArray.length);
-          if (docRecord.root.children && docRecord.root.children.length > 0) {
-            yNodesArray.push(docRecord.root.children);
+            ydoc.transact(() => {
+              yMetaMap.set('title', docRecord.title);
+              yMetaMap.set('version', docRecord.version);
+              yMetaMap.set('id', docRecord.root.id);
+
+              // Clear and insert children
+              yNodesArray.delete(0, yNodesArray.length);
+              if (docRecord.root.children && docRecord.root.children.length > 0) {
+                yNodesArray.push(docRecord.root.children);
+              }
+            });
           }
-        });
-      }
-    } catch (err) {
-      console.warn(`[WebSocket] Could not load initial state for document '${documentId}':`, err);
-    }
+        } catch (err) {
+          console.warn(`[WebSocket] Could not load initial state for document '${documentId}':`, err);
+        }
 
-    return session;
+        this.sessions.set(documentId, session);
+        return session;
+      } finally {
+        this.sessionInitPromises.delete(documentId);
+      }
+    })();
+
+    this.sessionInitPromises.set(documentId, initPromise);
+    return initPromise;
   }
 
   /**

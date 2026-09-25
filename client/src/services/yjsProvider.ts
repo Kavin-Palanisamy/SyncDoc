@@ -9,7 +9,7 @@ export interface YjsProviderOptions {
     userName: string;
     userColor: string;
   };
-  onStatusChange?: (status: 'connecting' | 'connected' | 'disconnected') => void;
+  onStatusChange?: (status: 'connecting' | 'connected' | 'disconnected', clientId?: string) => void;
   onPresenceChange?: (users: UserPresence[]) => void;
   onBlockLocksChange?: (locks: Record<string, BlockLockState>) => void;
   onDocChange?: (nodes: ASTNode[], title: string, version: number) => void;
@@ -23,6 +23,10 @@ export class SyncDocYjsProvider {
   private documentId: string;
   private user: { userId: string; userName: string; userColor: string };
   private isDestroyed = false;
+
+  public get clientId(): string {
+    return this.socket.id || '';
+  }
 
   constructor(options: YjsProviderOptions) {
     this.documentId = options.documentId;
@@ -45,7 +49,11 @@ export class SyncDocYjsProvider {
   private setupListeners(options: YjsProviderOptions): void {
     // Socket connection events
     this.socket.on('connect', () => {
-      options.onStatusChange?.('connected');
+      if (this.isDestroyed) {
+        this.socket.disconnect();
+        return;
+      }
+      options.onStatusChange?.('connected', this.socket.id);
       // Join document room
       this.socket.emit('join-document', {
         documentId: this.documentId,
@@ -61,7 +69,7 @@ export class SyncDocYjsProvider {
     });
 
     this.socket.on('disconnect', () => {
-      options.onStatusChange?.('disconnected');
+      options.onStatusChange?.('disconnected', '');
     });
 
     this.socket.on('connect_error', () => {
@@ -92,7 +100,7 @@ export class SyncDocYjsProvider {
 
     // Local Yjs update handler -> Send to server
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
-      if (origin !== 'remote' && !this.isDestroyed) {
+      if (origin !== 'remote' && origin !== 'local-init' && !this.isDestroyed) {
         this.socket.emit('yjs-update', {
           documentId: this.documentId,
           update: Array.from(update),
@@ -143,7 +151,7 @@ export class SyncDocYjsProvider {
         if (root.children && root.children.length > 0) {
           this.yNodes.push(root.children);
         }
-      });
+      }, 'local-init');
     }
   }
 
@@ -154,8 +162,8 @@ export class SyncDocYjsProvider {
         documentId: this.documentId,
         clientId: this.socket.id,
       });
-      this.socket.disconnect();
     }
+    this.socket.disconnect();
     this.doc.destroy();
   }
 }

@@ -27,6 +27,7 @@ interface CollaborationContextValue {
   blockLocks: Record<string, BlockLockState>;
   connectionStatus: 'connecting' | 'connected' | 'disconnected';
   currentUser: UserProfile;
+  clientId: string;
   activeBlockId: string | null;
   canUndo: boolean;
   canRedo: boolean;
@@ -55,14 +56,14 @@ const COLOR_PALETTE = [
 
 function getRandomUser(): UserProfile {
   const names = ['Alex Chen', 'Sam Rivera', 'Taylor Kim', 'Jordan Vance', 'Morgan Lee', 'Casey Smith'];
-  const storedName = localStorage.getItem('syncdoc_user_name');
-  const storedId = localStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}`;
-  const storedColor = localStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
+  const storedName = sessionStorage.getItem('syncdoc_user_name');
+  const storedId = sessionStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const storedColor = sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
 
   const userName = storedName || names[Math.floor(Math.random() * names.length)]!;
-  localStorage.setItem('syncdoc_user_id', storedId);
-  localStorage.setItem('syncdoc_user_name', userName);
-  localStorage.setItem('syncdoc_user_color', storedColor);
+  sessionStorage.setItem('syncdoc_user_id', storedId);
+  sessionStorage.setItem('syncdoc_user_name', userName);
+  sessionStorage.setItem('syncdoc_user_color', storedColor);
 
   return {
     userId: storedId,
@@ -83,6 +84,7 @@ export const CollaborationProvider: React.FC<{
   const [collaborators, setCollaborators] = useState<UserPresence[]>([]);
   const [blockLocks, setBlockLocks] = useState<Record<string, BlockLockState>>({});
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [clientId, setClientId] = useState<string>('');
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(new Date());
@@ -96,8 +98,14 @@ export const CollaborationProvider: React.FC<{
     const provider = new SyncDocYjsProvider({
       documentId,
       user: currentUser,
-      onStatusChange: (status) => setConnectionStatus(status),
-      onPresenceChange: (users) => setCollaborators(users),
+      onStatusChange: (status, socketId) => {
+        setConnectionStatus(status);
+        if (socketId) setClientId(socketId);
+        else if (status === 'disconnected') setClientId('');
+      },
+      onPresenceChange: (users) => {
+        setCollaborators(users);
+      },
       onBlockLocksChange: (locks) => setBlockLocks(locks),
       onDocChange: (updatedNodes, updatedTitle, updatedVersion) => {
         setNodes([...updatedNodes]);
@@ -107,10 +115,6 @@ export const CollaborationProvider: React.FC<{
     });
 
     providerRef.current = provider;
-
-    if (initialDocument) {
-      provider.initializeFromInitialAST(initialDocument);
-    }
 
     const undoManager = new Y.UndoManager([provider.yNodes, provider.yMeta]);
     undoManagerRef.current = undoManager;
@@ -196,7 +200,11 @@ export const CollaborationProvider: React.FC<{
       const provider = providerRef.current;
       if (!provider) return;
 
-      const newNode = createNode(type, documentId, atIndex, {
+      const rootId =
+        (provider.yMeta.get('id') as string | undefined) ||
+        `doc_${documentId}`;
+
+      const newNode = createNode(type, rootId, atIndex, {
         ...options,
         metadata: { author: currentUser.userName, createdAt: Date.now() },
       });
@@ -262,7 +270,11 @@ export const CollaborationProvider: React.FC<{
 
         const oldNode = provider.yNodes.get(idx);
         const content = (oldNode as { content?: string }).content || '';
-        const converted = createNode(newType, documentId, idx, { content });
+        const rootId =
+          (provider.yMeta.get('id') as string | undefined) ||
+          oldNode.parentId ||
+          `doc_${documentId}`;
+        const converted = createNode(newType, rootId, idx, { content });
         converted.id = oldNode.id;
 
         provider.yNodes.delete(idx, 1);
@@ -347,6 +359,7 @@ export const CollaborationProvider: React.FC<{
         blockLocks,
         connectionStatus,
         currentUser,
+        clientId: clientId || providerRef.current?.clientId || '',
         activeBlockId,
         canUndo,
         canRedo,

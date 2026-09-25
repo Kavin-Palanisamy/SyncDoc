@@ -30,12 +30,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   // User preferences
   const [userName, setUserName] = useState(() => localStorage.getItem('syncdoc_user_name') || 'Alex Chen');
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (retries = 2) => {
     setLoading(true);
     try {
       const res = await ApiService.listDocuments(searchQuery);
       setDocuments(res.documents);
     } catch (err) {
+      if (retries > 0) {
+        setTimeout(() => {
+          fetchDocuments(retries - 1);
+        }, 1200);
+        return;
+      }
       console.error('Failed to load documents:', err);
     } finally {
       setLoading(false);

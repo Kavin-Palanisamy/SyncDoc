@@ -20,6 +20,7 @@ export const ListBlock: React.FC<ListBlockProps> = ({
   const items = node.children || [];
 
   const handleItemChange = (idx: number, newContent: string) => {
+    if (isLocked) return;
     const updated = [...items];
     if (updated[idx]) {
       updated[idx] = { ...updated[idx], content: newContent };
@@ -28,6 +29,7 @@ export const ListBlock: React.FC<ListBlockProps> = ({
   };
 
   const handleToggleCheck = (idx: number) => {
+    if (isLocked) return;
     const updated = [...items];
     if (updated[idx]) {
       updated[idx] = { ...updated[idx], checked: !updated[idx].checked };
@@ -36,6 +38,7 @@ export const ListBlock: React.FC<ListBlockProps> = ({
   };
 
   const handleAddItem = (idx: number) => {
+    if (isLocked) return;
     const updated = [...items];
     const newItem: ListItemNode = {
       id: generateNodeId('li'),
@@ -52,7 +55,7 @@ export const ListBlock: React.FC<ListBlockProps> = ({
   };
 
   const handleDeleteItem = (idx: number) => {
-    if (items.length <= 1) return;
+    if (isLocked || items.length <= 1) return;
     const updated = items.filter((_, i) => i !== idx);
     updated.forEach((item, i) => (item.order = i));
     onUpdateItems(updated);
@@ -62,8 +65,13 @@ export const ListBlock: React.FC<ListBlockProps> = ({
     <div className="flex flex-col gap-1 w-full my-1">
       {items.length === 0 ? (
         <button
-          onClick={() => handleAddItem(-1)}
-          className="text-xs text-cyan-400 flex items-center gap-1 hover:underline"
+          disabled={isLocked}
+          onClick={() => {
+            if (!isLocked) handleAddItem(-1);
+          }}
+          className={`text-xs text-cyan-400 flex items-center gap-1 hover:underline ${
+            isLocked ? 'opacity-40 cursor-not-allowed' : ''
+          }`}
         >
           <Plus size={12} /> Add item
         </button>
@@ -116,18 +124,26 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (contentRef.current && contentRef.current.innerText !== (item.content || '')) {
-      contentRef.current.innerText = item.content || '';
+    if (!contentRef.current) return;
+    const isFocused = document.activeElement === contentRef.current;
+    const currentText = contentRef.current.innerText;
+    const targetText = item.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        contentRef.current.innerText = targetText;
+      }
     }
   }, [item.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (contentRef.current) {
       onContentChange(contentRef.current.innerText);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isLocked) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       onEnterPress();
@@ -146,7 +162,9 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
           type="checkbox"
           checked={!!item.checked}
           disabled={isLocked}
-          onChange={onToggleCheck}
+          onChange={() => {
+            if (!isLocked) onToggleCheck();
+          }}
           className="mt-1 cursor-pointer accent-blue-500 w-4 h-4 rounded"
         />
       )}
@@ -161,13 +179,18 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
         onBlur={onBlur}
         data-placeholder="List item..."
         className={`block-editable flex-1 text-slate-200 ${item.checked ? 'line-through text-slate-500' : ''} ${
-          isLocked ? 'opacity-70 cursor-not-allowed' : ''
+          isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''
         }`}
       />
 
       <button
-        onClick={onDelete}
-        className="opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 p-1 transition-opacity"
+        disabled={isLocked}
+        onClick={() => {
+          if (!isLocked) onDelete();
+        }}
+        className={`opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 p-1 transition-opacity ${
+          isLocked ? 'pointer-events-none' : ''
+        }`}
         title="Delete item"
       >
         <Trash2 size={12} />

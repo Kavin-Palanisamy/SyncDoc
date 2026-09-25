@@ -19,12 +19,19 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (contentRef.current && contentRef.current.innerText !== (node.content || '')) {
-      contentRef.current.innerText = node.content || '';
+    if (!contentRef.current) return;
+    const isFocused = document.activeElement === contentRef.current;
+    const currentText = contentRef.current.innerText;
+    const targetText = node.content || '';
+    if (!isFocused || (currentText === '' && targetText !== '')) {
+      if (currentText !== targetText) {
+        contentRef.current.innerText = targetText;
+      }
     }
   }, [node.content]);
 
   const handleInput = () => {
+    if (isLocked) return;
     if (contentRef.current) {
       onContentChange(contentRef.current.innerText);
     }
@@ -39,7 +46,7 @@ export const ParagraphBlock: React.FC<ParagraphBlockProps> = ({
       onFocus={onFocus}
       onBlur={onBlur}
       data-placeholder="Type paragraph content..."
-      className={`block-editable block-paragraph ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+      className={`block-editable block-paragraph ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
     />
   );
 };

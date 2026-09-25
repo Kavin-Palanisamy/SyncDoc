@@ -313,6 +313,13 @@
 .dash-header-inner {
   padding-top: var(--space-5);
   padding-bottom: var(--space-5);
+  padding-left: 72px;
+}
+
+@media (max-width: 480px) {
+  .dash-header-inner {
+    padding-left: 60px;
+  }
 }
 
 .dash-main {
@@ -481,3 +488,5 @@
     padding: 18px 18px 14px;
   }
 }
+
+

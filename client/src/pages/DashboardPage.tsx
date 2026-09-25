@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
-   import "./DashboardPage.css";
+  import "./DashboardPage.css";
+  import Sidebar from '../components/Sidebar.jsx';
 
 interface DashboardPageProps {
   onOpenDocument: (documentId: string) => void;
@@ -161,24 +162,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   };
 
   return (
-    <div className="dashboard-page min-h-screen text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+    <div className="dashboard-page min-h-screen text-slate-100 flex selection:bg-blue-600 selection:text-white">
+  <Sidebar
+    documents={documents}
+    activeDocumentId={null}
+    onSelectDocument={onOpenDocument}
+    onNewDocument={() => handleCreateFromTemplate('blank')}
+  />
       {/* Top Navbar */}
       <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
-  <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
-    <div className="dash-brand-row flex items-center gap-3.5">
-      <div className="dash-brand-icon">
-        <Layers className="text-white" size={22} />
+    <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
+    <div className="sidebar-brand" style={{ padding: 0 }}>
+      <div className="sidebar-brand-icon">
+        <Layers size={18} />
       </div>
-      <div>
-        <h1 className="dash-brand font-display text-white flex items-center gap-2">
-          SyncDoc
-          <span className="dash-brand-badge bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full font-mono">
-            v1.0
-          </span>
-        </h1>
-        <p className="dash-brand-subtitle text-slate-400">Collaborative AST Document Engine</p>
+      <div className="sidebar-brand-text">
+        <span className="sidebar-brand-name">SyncDoc</span>
+        <span className="sidebar-brand-subtitle">Collaborative AST Document Engine</span>
       </div>
     </div>
+
 
     {/* User Profile Box */}
     <div className="flex items-center gap-3">

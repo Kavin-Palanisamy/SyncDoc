@@ -17,7 +17,6 @@ import "./Sidebar.css";
  */
 
 /** @param {SidebarProps} props */
-
 export default function Sidebar({
   documents = [],
   activeDocumentId = null,

@@ -314,14 +314,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
 
         {/* Search and Catalog Filter */}
         <div className="dash-search-row flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+          <div className="search-input-shell">
+            <Search className="search-input-icon" size={16} />
             <input
               type="text"
               placeholder="Search documents by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="dashboard-input pl-10 text-xs"
+              className="search-input"
             />
           </div>
 

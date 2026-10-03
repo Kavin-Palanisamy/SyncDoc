@@ -11,6 +11,8 @@ import {
   Code,
   ShieldCheck,
   Zap,
+  User,
+  ChevronDown
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
@@ -177,32 +179,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   />
       {/* Top Navbar */}
       <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
-    <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
-    <div className="sidebar-brand" style={{ padding: 0 }}>
-      <div className="sidebar-brand-icon">
-        <Layers size={18} />
-      </div>
-      <div className="sidebar-brand-text">
-        <span className="sidebar-brand-name">SyncDoc</span>
-        <span className="sidebar-brand-subtitle">Collaborative AST Document Engine</span>
-      </div>
-    </div>
+            <div className="dash-header-inner w-full px-6 flex items-center justify-between">
+    <h1 className="dash-header-title">Workspace</h1>
 
-
-    {/* User Profile Box */}
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2.5 bg-slate-900/80 border border-slate-800 pl-2 pr-3 py-1.5 rounded-xl text-xs">
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-          {userName.trim().charAt(0).toUpperCase() || 'U'}
-        </div>
-        <input
-          type="text"
-          value={userName}
-          onChange={(e) => handleUpdateUserName(e.target.value)}
-          className="bg-transparent text-slate-100 font-semibold outline-none w-28 hover:text-blue-400 focus:text-blue-400"
-          title="Click to change your collaborator display name"
-        />
+        {/* User Profile Box */}
+            {/* User Profile Box */}
+    <div className="profile-control" title={userName}>
+      <div className="profile-avatar">
+        <User size={14} />
       </div>
+      <span className="profile-name">{userName}</span>
+      <ChevronDown size={14} className="profile-chevron" />
+
     </div>
   </div>
 </header>
@@ -217,6 +205,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
       Spin up a new document or import existing content.
     </p>
   </div>
+
+  <div className="validation-badge">
+            <ShieldCheck size={13} />
+            <span>Mongoose Recursive Validation Active</span>
+          </div>
 
   <div className="dash-hero-grid">
           {/* Quick Create Blank */}
@@ -325,11 +318,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             />
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <ShieldCheck size={14} /> Mongoose Recursive Validation Active
-            </span>
-          </div>
         </div>
 
         {/* Document Cards Grid */}

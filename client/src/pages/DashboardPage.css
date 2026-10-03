@@ -561,3 +561,111 @@
   }
 }
 
+/* ---------- Header title (replaces header logo) ---------- */
+
+.dash-header-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+/* ---------- Header row layout (explicit, not relying on Tailwind) ---------- */
+
+.dash-header-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ---------- Profile control ---------- */
+
+.profile-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-soft);
+  cursor: default;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-control:hover {
+  background: var(--surface-glass-hover);
+  border-color: var(--border-soft-hover);
+}
+
+.profile-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #06110e;
+  background: var(--verdigris-400);
+}
+
+.profile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.profile-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .profile-name {
+    max-width: 80px;
+  }
+}
+
+/* ---------- Validation badge ---------- */
+
+.validation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dash-section-header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.validation-badge {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .dash-section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

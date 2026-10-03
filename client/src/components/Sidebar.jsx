@@ -34,7 +34,7 @@ export default function Sidebar({
         aria-label={isMobileOpen ? "Close sidebar" : "Open sidebar"}
         aria-expanded={isMobileOpen}
       >
-        {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
+         <Menu size={20} />
       </button>
 
       {isMobileOpen && (

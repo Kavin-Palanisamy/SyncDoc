@@ -3,6 +3,7 @@ import { ApiService, DocumentSummary } from '../services/api.js';
 import { CollaborationProvider } from '../context/CollaborationContext.js';
 import { DocumentEditor } from '../components/editor/DocumentEditor.js';
 import { Zap, AlertCircle } from 'lucide-react';
+import "./EditorPage.css";
 
 interface EditorPageProps {
   documentId: string;
@@ -42,11 +43,12 @@ export const EditorPage: React.FC<EditorPageProps> = ({
     };
   }, [documentId]);
 
+    
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center">
-        <Zap className="animate-spin text-blue-500 mb-3" size={32} />
-        <p className="text-slate-400 font-display font-medium text-sm">
+      <div className="editor-status-screen">
+        <Zap className="editor-status-spinner" size={32} />
+        <p className="editor-status-text">
           Loading document & establishing Yjs collaboration session...
         </p>
       </div>
@@ -55,10 +57,10 @@ export const EditorPage: React.FC<EditorPageProps> = ({
 
   if (error || !docSummary) {
     return (
-      <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center p-6 text-center">
-        <AlertCircle className="text-rose-500 mb-3" size={40} />
-        <h2 className="text-lg font-bold text-slate-200 mb-2">Failed to load document</h2>
-        <p className="text-slate-400 text-xs max-w-md mb-6">{error}</p>
+      <div className="editor-status-screen editor-status-screen--error">
+        <AlertCircle className="editor-status-icon-error" size={40} />
+        <h2 className="editor-status-title">Failed to load document</h2>
+        <p className="editor-status-desc">{error}</p>
         <button onClick={onBackToDashboard} className="btn btn-primary text-xs">
           Return to Dashboard
         </button>

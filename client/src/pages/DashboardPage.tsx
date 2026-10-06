@@ -182,7 +182,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
             <div className="dash-header-inner w-full px-6 flex items-center justify-between">
     <h1 className="dash-header-title">Workspace</h1>
 
-        {/* User Profile Box */}
             {/* User Profile Box */}
     <div className="profile-control" title={userName}>
       <div className="profile-avatar">
@@ -197,40 +196,44 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
 
       {/* Hero / Quick Actions */}
       <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 w-full">
-  <div className="dash-section-header">
-    <h2 className="dash-eyebrow text-[var(--text-muted)]">
-      Start creating
-    </h2>
-    <p className="dash-eyebrow-desc text-[var(--text-secondary)]">
-      Spin up a new document or import existing content.
-    </p>
+  <div className="dash-section-header dash-section-header-row">
+    <div>
+      <h2 className="dash-eyebrow text-[var(--text-muted)]">
+        Technical WorkSpace
+      </h2>
+      <p className="dash-eyebrow-desc text-[var(--text-secondary)]">
+        Collabortive AST document engine with real time conflict-free synchronization
+      </p>
+    </div>
+
+    <div className="validation-badge">
+      <ShieldCheck size={13} />
+      <span>Mongoose Recursive Validation Active</span>
+    </div>
   </div>
 
-  <div className="validation-badge">
-            <ShieldCheck size={13} />
-            <span>Mongoose Recursive Validation Active</span>
-          </div>
-
-  <div className="dash-hero-grid">
+    <div className="dash-hero-grid">
           {/* Quick Create Blank */}
           <div
             onClick={() => handleCreateFromTemplate('blank')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFromTemplate('blank'); }}
+            className="hero-card hero-card--blue group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-950/80 text-blue-400 flex items-center justify-center border border-blue-800/60 group-hover:scale-110 transition-transform">
-                <Plus size={20} />
+            <div className="hero-card-top">
+              <div className="hero-card-icon">
+                <Plus size={18} />
               </div>
-              <span className="dash-card-tag text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900">
+              <span className="dash-card-tag hero-card-tag">
                 Quick Start
               </span>
             </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-cyan-400 transition-colors">
+            <div className="hero-card-body">
+              <h3 className="dash-card-title hero-card-title font-display group-hover:text-cyan-400 transition-colors">
                 New Blank Document
               </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
-                Start from a clean slate with block-based editing and Yjs real-time sync.
+              <p className="dash-card-desc hero-card-desc">
+                Fresh structural canvas with block editing and real time collabortive syncing.
               </p>
             </div>
           </div>
@@ -238,21 +241,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Template: RFC Spec */}
           <div
             onClick={() => handleCreateFromTemplate('rfc')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFromTemplate('rfc'); }}
+            className="hero-card hero-card--purple group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-purple-950/80 text-purple-400 flex items-center justify-center border border-purple-800/60 group-hover:scale-110 transition-transform">
-                <BookOpen size={20} />
+            <div className="hero-card-top">
+              <div className="hero-card-icon">
+                <BookOpen size={18} />
               </div>
-              <span className="dash-card-tag text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-900">
+              <span className="dash-card-tag hero-card-tag">
                 Template
               </span>
             </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
+            <div className="hero-card-body">
+              <h3 className="dash-card-title hero-card-title font-display group-hover:text-purple-400 transition-colors">
                 Architecture RFC
               </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
+              <p className="dash-card-desc hero-card-desc">
                 Technical design spec with problem statement, architecture, and code blocks.
               </p>
             </div>
@@ -261,21 +266,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Template: API Spec */}
           <div
             onClick={() => handleCreateFromTemplate('api')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFromTemplate('api'); }}
+            className="hero-card hero-card--cyan group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-cyan-950/80 text-cyan-400 flex items-center justify-center border border-cyan-800/60 group-hover:scale-110 transition-transform">
-                <Code size={20} />
+            <div className="hero-card-top">
+              <div className="hero-card-icon">
+                <Code size={18} />
               </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900">
+              <span className="dash-card-tag hero-card-tag">
                 Template
               </span>
             </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
+            <div className="hero-card-body">
+              <h3 className="dash-card-title hero-card-title font-display group-hover:text-cyan-400 transition-colors">
                 API Technical Spec
               </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
+              <p className="dash-card-desc hero-card-desc">
                 Pre-configured structural template with endpoints, methods, and nested lists.
               </p>
             </div>
@@ -284,21 +291,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
           {/* Markdown Importer */}
           <div
             onClick={() => setIsImportModalOpen(true)}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') setIsImportModalOpen(true); }}
+            className="hero-card hero-card--emerald group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-emerald-950/80 text-emerald-400 flex items-center justify-center border border-emerald-800/60 group-hover:scale-110 transition-transform">
-                <Upload size={20} />
+            <div className="hero-card-top">
+              <div className="hero-card-icon">
+                <Upload size={18} />
               </div>
-              <span className="dash-card-tag text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900">
+              <span className="dash-card-tag hero-card-tag">
                 Converter
               </span>
             </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
+            <div className="hero-card-body">
+              <h3 className="dash-card-title hero-card-title font-display group-hover:text-emerald-400 transition-colors">
                 Import Markdown to AST
               </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
+              <p className="dash-card-desc hero-card-desc">
                 Parse existing Markdown files into fully validated structural AST documents.
               </p>
             </div>

@@ -532,5 +532,20 @@ export class DocumentController {
       DocumentController.handleError(res, error, 500);
     }
   }
+
+  static async getTeamMembers(_req: Request, res: Response): Promise<void> {
+    try {
+      const { WebSocketCollaborationServer } = await import('../collaboration/WebSocketServer.js');
+      const members = await WebSocketCollaborationServer.getTeamMembersList();
+      res.status(200).json({
+        success: true,
+        data: members,
+        count: members.length,
+        onlineCount: members.filter((m) => m.isOnline).length,
+      });
+    } catch (error) {
+      DocumentController.handleError(res, error, 500);
+    }
+  }
 }
 

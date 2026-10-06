@@ -39,8 +39,13 @@ export default function Signup({ onSwitchToLogin }) {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      setError("This is a UI preview — signup isn't connected yet.");
-    }, 900);
+      const name = fullName.trim();
+      localStorage.setItem('syncdoc_auth', 'true');
+      localStorage.setItem('syncdoc_user_name', name);
+      sessionStorage.setItem('syncdoc_auth', 'true');
+      sessionStorage.setItem('syncdoc_user_name', name);
+      if (onSwitchToLogin) onSwitchToLogin();
+    }, 400);
   };
 
   const handleLoginClick = (e) => {

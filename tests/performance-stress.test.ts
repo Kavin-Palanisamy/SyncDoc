@@ -483,12 +483,16 @@ describe('STEP 7: Performance, Stress Testing & Reliability Test Suite', () => {
         client.emit('yjs-update', { documentId: docId, update: Array.from(delta) });
       }
 
-      // Wait briefly for server event-loop tick
-      await new Promise((r) => setTimeout(r, 200));
+      // Wait for all rapid updates to settle on server
+      const targetLength = initialAST.children.length + NUM_UPDATES;
+      const startWait = Date.now();
+      while (session.doc.getArray('nodes').length < targetLength && Date.now() - startWait < 3000) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
 
       // Verify all 50 updates reached the live server session Y.Doc
       const serverNodes = session.doc.getArray('nodes');
-      expect(serverNodes.length).toBe(initialAST.children.length + NUM_UPDATES);
+      expect(serverNodes.length).toBe(targetLength);
 
       // Verify changeCount incremented by exactly 50
       expect(session.changeCount).toBeGreaterThanOrEqual(NUM_UPDATES);

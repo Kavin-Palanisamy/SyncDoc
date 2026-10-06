@@ -1,4 +1,4 @@
-import { DocumentNode } from '@syncdoc/shared';
+import { DocumentNode, TeamMember } from '@syncdoc/shared';
 
 const API_BASE = '/api';
 
@@ -121,6 +121,13 @@ export class ApiService {
       body: JSON.stringify({ markdown, title, documentId }),
     });
     if (!res.ok) throw new Error(`Failed to import markdown: ${res.statusText}`);
+    const json = await res.json();
+    return json.data;
+  }
+
+  public static async getTeamMembers(): Promise<TeamMember[]> {
+    const res = await fetch(`${API_BASE}/members`);
+    if (!res.ok) throw new Error(`Failed to fetch team members: ${res.statusText}`);
     const json = await res.json();
     return json.data;
   }

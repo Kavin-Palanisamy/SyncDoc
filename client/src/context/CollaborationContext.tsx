@@ -55,15 +55,17 @@ const COLOR_PALETTE = [
 ];
 
 function getRandomUser(): UserProfile {
-  const names = ['Alex Chen', 'Sam Rivera', 'Taylor Kim', 'Jordan Vance', 'Morgan Lee', 'Casey Smith'];
-  const storedName = sessionStorage.getItem('syncdoc_user_name');
-  const storedId = sessionStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  const storedColor = sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
+  const names = ['Kavin', 'Sam Rivera', 'Alex Chen', 'Taylor Kim', 'Jordan Vance', 'Morgan Lee'];
+  const storedName = localStorage.getItem('syncdoc_user_name') || sessionStorage.getItem('syncdoc_user_name');
+  const storedId = localStorage.getItem('syncdoc_user_id') || sessionStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const storedColor = localStorage.getItem('syncdoc_user_color') || sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
 
-  const userName = storedName || names[Math.floor(Math.random() * names.length)]!;
+  const userName = storedName || names[0]!;
   sessionStorage.setItem('syncdoc_user_id', storedId);
   sessionStorage.setItem('syncdoc_user_name', userName);
   sessionStorage.setItem('syncdoc_user_color', storedColor);
+  localStorage.setItem('syncdoc_user_id', storedId);
+  localStorage.setItem('syncdoc_user_name', userName);
 
   return {
     userId: storedId,

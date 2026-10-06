@@ -1,0 +1,346 @@
+/* ----------------------------------------------------
+   SyncDoc Team Members Presence Panel Stylesheet
+   ---------------------------------------------------- */
+
+.team-members-panel {
+  width: 290px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+  align-self: flex-start;
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 100px);
+}
+
+@media (max-width: 1200px) {
+  .team-members-panel {
+    width: 260px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .team-members-panel {
+    width: 100%;
+    position: static;
+    max-height: none;
+    margin-top: 24px;
+  }
+}
+
+/* Panel Header */
+.team-panel-header {
+  padding: 16px 18px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(11, 15, 25, 0.4);
+}
+
+.team-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-panel-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.team-panel-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #f1f5f9;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.team-panel-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin: 1px 0 0;
+}
+
+.team-online-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  white-space: nowrap;
+}
+
+.counter-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite ease-in-out;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.75;
+  }
+}
+
+/* Panel Body & Sections */
+.team-panel-content {
+  padding: 16px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.team-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-section-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px 8px;
+}
+
+.section-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.dot-gray {
+  background-color: #64748b;
+}
+
+.team-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.team-section-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Member List */
+.team-member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.team-member-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.team-member-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.team-member-item.is-current-user {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.18);
+}
+
+.team-member-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.team-member-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.team-status-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #0f172a;
+}
+
+.indicator-online {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+}
+
+.indicator-offline {
+  background-color: #475569;
+}
+
+.team-member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-member-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-member-item.is-offline .team-member-name {
+  color: #94a3b8;
+}
+
+.team-you-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  line-height: 1.2;
+}
+
+.team-member-role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1px;
+}
+
+.team-member-role {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-online-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #34d399;
+}
+
+.pulse-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #10b981;
+}
+
+/* Empty State */
+.team-empty-state {
+  padding: 12px 10px;
+  font-size: 11.5px;
+  color: #64748b;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+/* Footer */
+.team-panel-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(11, 15, 25, 0.35);
+}
+
+.team-panel-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Skeletons */
+.team-skeleton-row {
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 8px;
+  animation: pulse-skeleton 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-skeleton {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

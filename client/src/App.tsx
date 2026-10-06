@@ -5,8 +5,9 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 
 export const App: React.FC = () => {
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('syncdoc_auth') === 'true' || !!sessionStorage.getItem('syncdoc_user_name');
+  });
   const [showSignup, setShowSignup] = useState(false);
 
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(() => {
@@ -37,17 +38,23 @@ export const App: React.FC = () => {
     url.searchParams.delete('doc');
     window.history.pushState({}, '', url.toString());
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('syncdoc_auth');
+    sessionStorage.removeItem('syncdoc_auth');
+    setIsLoggedIn(false);
+  };
   
   if (!isLoggedIn) {
-  return showSignup ? (
-    <Signup onSwitchToLogin={() => setShowSignup(false)} />
-  ) : (
-    <Login
-      onLogin={() => setIsLoggedIn(true)}
-      onSwitchToSignup={() => setShowSignup(true)}
-    />
-  );
-}
+    return showSignup ? (
+      <Signup onSwitchToLogin={() => setShowSignup(false)} />
+    ) : (
+      <Login
+        onLogin={() => setIsLoggedIn(true)}
+        onSwitchToSignup={() => setShowSignup(true)}
+      />
+    );
+  }
 
   return activeDocumentId ? (
     <EditorPage
@@ -55,6 +62,6 @@ export const App: React.FC = () => {
       onBackToDashboard={handleBackToDashboard}
     />
   ) : (
-    <DashboardPage onOpenDocument={handleOpenDocument} />
+    <DashboardPage onOpenDocument={handleOpenDocument} onLogout={handleLogout} />
   );
 };

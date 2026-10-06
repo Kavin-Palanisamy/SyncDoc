@@ -56,28 +56,35 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-menu-enter">
         {/* Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Download className="text-blue-400" size={18} />
-            <h3 className="font-display font-bold text-slate-100 text-base">
-              Export Document: &quot;{title}&quot;
-            </h3>
+        <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-950/60 border border-blue-800/40 text-blue-400 flex items-center justify-center">
+              <Download size={16} />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm">
+                Export Document
+              </h3>
+              <p className="text-[11px] text-slate-400 truncate max-w-xs">&quot;{title}&quot;</p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="btn-editor-icon"
+            title="Close modal"
+            aria-label="Close modal"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-4">
-          <p className="text-xs text-slate-400">
-            Select an export pipeline format. All HTML and PDF outputs are sanitized through the DOMPurify security pipeline.
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Choose an export pipeline. HTML and PDF outputs are sanitized through the DOMPurify security pipeline.
           </p>
 
           <div className="grid grid-cols-2 gap-3">
@@ -86,15 +93,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={() => setFormat('html')}
               className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
                 format === 'html'
-                  ? 'bg-blue-950/50 border-blue-500 shadow-md'
-                  : 'bg-slate-800/40 border-slate-700 hover:border-slate-600'
+                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
+                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
-                <FileCode size={16} /> Sanitized HTML
+              <div className="flex items-center gap-2 text-blue-400 font-semibold text-xs">
+                <FileCode size={15} /> Sanitized HTML
               </div>
-              <span className="text-[11px] text-slate-400">
-                Clean web HTML with DOMPurify XSS protections.
+              <span className="text-[11px] text-slate-400 leading-snug">
+                Web document with DOMPurify XSS protections.
               </span>
             </button>
 
@@ -103,15 +110,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={() => setFormat('pdf')}
               className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
                 format === 'pdf'
-                  ? 'bg-blue-950/50 border-blue-500 shadow-md'
-                  : 'bg-slate-800/40 border-slate-700 hover:border-slate-600'
+                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
+                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-2 text-cyan-400 font-semibold text-sm">
-                <Printer size={16} /> Print / PDF Layout
+              <div className="flex items-center gap-2 text-cyan-400 font-semibold text-xs">
+                <Printer size={15} /> Print / PDF Layout
               </div>
-              <span className="text-[11px] text-slate-400">
-                Self-contained printable typography & print media layout.
+              <span className="text-[11px] text-slate-400 leading-snug">
+                Self-contained printable layout with custom CSS.
               </span>
             </button>
 
@@ -120,15 +127,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={() => setFormat('markdown')}
               className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
                 format === 'markdown'
-                  ? 'bg-blue-950/50 border-blue-500 shadow-md'
-                  : 'bg-slate-800/40 border-slate-700 hover:border-slate-600'
+                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
+                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-                <FileText size={16} /> Markdown (.md)
+              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs">
+                <FileText size={15} /> Markdown (.md)
               </div>
-              <span className="text-[11px] text-slate-400">
-                Compiled standard GitHub Flavored Markdown.
+              <span className="text-[11px] text-slate-400 leading-snug">
+                Standard GitHub Flavored Markdown document.
               </span>
             </button>
 
@@ -137,43 +144,43 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={() => setFormat('json')}
               className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
                 format === 'json'
-                  ? 'bg-blue-950/50 border-blue-500 shadow-md'
-                  : 'bg-slate-800/40 border-slate-700 hover:border-slate-600'
+                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
+                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-2 text-purple-400 font-semibold text-sm">
-                <Code2 size={16} /> Structural AST (.json)
+              <div className="flex items-center gap-2 text-purple-400 font-semibold text-xs">
+                <Code2 size={15} /> Structural AST (.json)
               </div>
-              <span className="text-[11px] text-slate-400">
-                Full tree structure with node IDs and metadata.
+              <span className="text-[11px] text-slate-400 leading-snug">
+                Full AST tree structure with node IDs.
               </span>
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#090d16]/80 border-t border-white/[0.08] flex items-center justify-between">
           {format === 'pdf' ? (
             <button
               onClick={handlePrintPreview}
-              className="btn btn-secondary text-xs"
+              className="btn-editor-secondary"
             >
-              <Printer size={14} /> Open Print / Save as PDF
+              <Printer size={13} /> Open Print Preview
             </button>
           ) : (
             <div />
           )}
 
           <div className="flex items-center gap-2">
-            <button onClick={onClose} className="btn btn-ghost text-xs">
+            <button onClick={onClose} className="btn-editor-secondary">
               Cancel
             </button>
             <button
               disabled={downloading}
               onClick={handleDownload}
-              className="btn btn-primary text-xs"
+              className="btn-editor-primary"
             >
-              <Download size={14} />
+              <Download size={13} />
               {downloading ? 'Compiling...' : `Download ${format.toUpperCase()}`}
             </button>
           </div>

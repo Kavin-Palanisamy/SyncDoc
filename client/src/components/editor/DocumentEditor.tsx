@@ -1,11 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCollaboration } from '../../context/CollaborationContext.js';
 import { EditorToolbar } from './EditorToolbar.js';
 import { BlockRenderer } from './BlockRenderer.js';
 import { ASTVisualizer } from './ASTVisualizer.js';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer.js';
 import { ExportModal } from './ExportModal.js';
-import { Plus, Sparkles, FileCode, Layers } from 'lucide-react';
+import {
+  Plus,
+  Sparkles,
+  FileCode,
+  Layers,
+  Copy,
+  Check,
+  FileText,
+  Code2,
+  Quote,
+  List,
+  Heading as HeadingIcon,
+  Clock,
+  Edit3,
+  Type,
+  Minus,
+} from 'lucide-react';
 
 interface DocumentEditorProps {
   onBackToDashboard: () => void;
@@ -15,15 +31,33 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
   const {
     documentId,
     title,
+    updateTitle,
     version,
     nodes,
     insertBlock,
     rollbackToVersion,
+    lastSavedAt,
   } = useCollaboration();
 
   const [viewMode, setViewMode] = useState<'editor' | 'ast' | 'markdown' | 'html'>('editor');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [copiedMarkdown, setCopiedMarkdown] = useState(false);
+
+  // In-canvas title editing state
+  const [isEditingCanvasTitle, setIsEditingCanvasTitle] = useState(false);
+  const [canvasTitleText, setCanvasTitleText] = useState(title);
+
+  useEffect(() => {
+    setCanvasTitleText(title);
+  }, [title]);
+
+  const handleCanvasTitleSubmit = () => {
+    setIsEditingCanvasTitle(false);
+    if (canvasTitleText.trim() && canvasTitleText.trim() !== title) {
+      updateTitle(canvasTitleText.trim());
+    }
+  };
 
   // Compute Markdown on the fly for the preview tab
   const markdownText = useMemo(() => {
@@ -73,9 +107,15 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
     return lines.join('\n');
   }, [nodes]);
 
+  const handleCopyMarkdown = () => {
+    navigator.clipboard.writeText(markdownText);
+    setCopiedMarkdown(true);
+    setTimeout(() => setCopiedMarkdown(false), 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
-      {/* Top Toolbar */}
+    <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
+      {/* Top Header */}
       <EditorToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -84,43 +124,90 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
         onBackToDashboard={onBackToDashboard}
       />
 
-      {/* Main Workspace View */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
+      {/* Main Workspace Canvas */}
+      <main className="flex-1 w-full max-w-[840px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {viewMode === 'editor' && (
-          <div className="editor-container">
-            {/* Document Header Title info */}
-            <div className="mb-6 pb-4 border-b border-slate-800/80">
-              <h1 className="text-3xl font-display font-extrabold text-white tracking-tight">
-                {title}
-              </h1>
-              <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
-                <span className="flex items-center gap-1 font-mono text-cyan-400">
-                  <Layers size={12} /> AST Version {version}
+          <div className="editor-document-canvas">
+            {/* Document Header & Title Area */}
+            <header className="document-header-area">
+              {isEditingCanvasTitle ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={canvasTitleText}
+                  onChange={(e) => setCanvasTitleText(e.target.value)}
+                  onBlur={handleCanvasTitleSubmit}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCanvasTitleSubmit()}
+                  className="document-title-input"
+                  placeholder="Untitled Document"
+                />
+              ) : (
+                <div
+                  onClick={() => {
+                    setCanvasTitleText(title);
+                    setIsEditingCanvasTitle(true);
+                  }}
+                  className="group/title flex items-baseline gap-2 cursor-pointer rounded-lg -ml-2 p-2 hover:bg-white/[0.03] transition-colors"
+                  title="Click to rename document"
+                >
+                  <h1 className="document-main-title">
+                    {title}
+                  </h1>
+                  <Edit3
+                    size={15}
+                    className="text-slate-500 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mb-1"
+                  />
+                </div>
+              )}
+
+              {/* Document Metadata Ribbon */}
+              <div className="document-metadata-row">
+                <span className="doc-meta-item">
+                  <Clock size={12} className="text-slate-400" />
+                  <span>
+                    {lastSavedAt
+                      ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      : 'All changes saved'}
+                  </span>
                 </span>
-                <span>&bull;</span>
-                <span>{nodes.length} structural blocks</span>
-                <span>&bull;</span>
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <Sparkles size={12} /> Yjs CRDT Synchronized
+                <span className="doc-meta-separator">•</span>
+                <span className="doc-meta-item font-mono">
+                  <Layers size={12} className="text-cyan-400" />
+                  <span>{nodes.length} {nodes.length === 1 ? 'block' : 'blocks'}</span>
+                </span>
+                <span className="doc-meta-separator">•</span>
+                <span className="doc-meta-item font-mono text-blue-400">
+                  <span>v{version}</span>
+                </span>
+                <span className="doc-meta-separator">•</span>
+                <span className="doc-meta-item text-emerald-400">
+                  <Sparkles size={12} />
+                  <span>CRDT Synced</span>
                 </span>
               </div>
-            </div>
+            </header>
 
-            {/* Block List */}
+            {/* Document Content Flow */}
             {nodes.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-slate-800 rounded-2xl p-8">
-                <p className="text-slate-400 text-sm mb-4">
-                  This document has no content blocks yet.
+              <div className="editor-empty-state">
+                <div className="w-12 h-12 rounded-xl bg-blue-950/40 border border-blue-800/30 text-blue-400 flex items-center justify-center mb-3 shadow-inner">
+                  <FileText size={22} />
+                </div>
+                <h3 className="text-base font-bold text-slate-200 mb-1">
+                  Start drafting your document
+                </h3>
+                <p className="text-xs text-slate-400 max-w-xs mb-4 leading-relaxed">
+                  Add blocks below. Changes synchronize in real time with non-destructive AST conflict resolution.
                 </p>
                 <button
                   onClick={() => insertBlock('paragraph', 0)}
-                  className="btn btn-primary text-xs"
+                  className="btn-editor-primary"
                 >
                   <Plus size={14} /> Add First Paragraph
                 </button>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="editor-blocks-container">
                 {nodes.map((node, index) => (
                   <BlockRenderer
                     key={node.id}
@@ -134,35 +221,66 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
             )}
 
             {/* Bottom Add Block Bar */}
-            <div className="mt-8 pt-4 border-t border-slate-800/60 flex items-center justify-center gap-2">
-              <button
-                onClick={() => insertBlock('paragraph', nodes.length)}
-                className="btn btn-secondary text-xs"
-              >
-                <Plus size={14} /> Add Paragraph
-              </button>
-              <button
-                onClick={() => insertBlock('heading', nodes.length, { level: 2 })}
-                className="btn btn-secondary text-xs"
-              >
-                <Plus size={14} /> Add Heading
-              </button>
-              <button
-                onClick={() => insertBlock('code_block', nodes.length)}
-                className="btn btn-secondary text-xs"
-              >
-                <Plus size={14} /> Add Code Block
-              </button>
-              <button
-                onClick={() => insertBlock('list', nodes.length)}
-                className="btn btn-secondary text-xs"
-              >
-                <Plus size={14} /> Add List
-              </button>
+            <div className="editor-bottom-bar">
+              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold">
+                <Plus size={13} className="text-blue-400" />
+                <span>Add Block:</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => insertBlock('paragraph', nodes.length)}
+                  className="btn-insert-chip"
+                  title="Add Paragraph Block"
+                >
+                  <Type size={12} className="insert-chip-icon text-slate-300" />
+                  <span>Paragraph</span>
+                </button>
+                <button
+                  onClick={() => insertBlock('heading', nodes.length, { level: 2 })}
+                  className="btn-insert-chip"
+                  title="Add Heading Block"
+                >
+                  <HeadingIcon size={12} className="insert-chip-icon text-purple-400" />
+                  <span>Heading</span>
+                </button>
+                <button
+                  onClick={() => insertBlock('code_block', nodes.length)}
+                  className="btn-insert-chip"
+                  title="Add Code Block"
+                >
+                  <Code2 size={12} className="insert-chip-icon text-amber-400" />
+                  <span>Code</span>
+                </button>
+                <button
+                  onClick={() => insertBlock('list', nodes.length)}
+                  className="btn-insert-chip"
+                  title="Add List Block"
+                >
+                  <List size={12} className="insert-chip-icon text-cyan-400" />
+                  <span>List</span>
+                </button>
+                <button
+                  onClick={() => insertBlock('blockquote', nodes.length)}
+                  className="btn-insert-chip"
+                  title="Add Quote Block"
+                >
+                  <Quote size={12} className="insert-chip-icon text-pink-400" />
+                  <span>Quote</span>
+                </button>
+                <button
+                  onClick={() => insertBlock('divider', nodes.length)}
+                  className="btn-insert-chip"
+                  title="Add Horizontal Divider Block"
+                >
+                  <Minus size={12} className="insert-chip-icon text-slate-400" />
+                  <span>Divider</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
 
+        {/* Live AST Visualizer Tab */}
         {viewMode === 'ast' && (
           <ASTVisualizer
             documentId={documentId}
@@ -172,65 +290,105 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
           />
         )}
 
+        {/* Compiled Markdown Tab */}
         {viewMode === 'markdown' && (
-          <div className="glass-panel p-6 my-4">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <h3 className="font-display font-semibold text-slate-200 text-sm">
-                Compiled Markdown Representation
-              </h3>
+          <div className="preview-panel">
+            <div className="preview-panel-header">
+              <div className="flex items-center gap-2">
+                <FileText className="text-blue-400" size={17} />
+                <h3 className="font-semibold text-slate-200 text-sm">
+                  Compiled GitHub Flavored Markdown
+                </h3>
+              </div>
               <button
-                onClick={() => navigator.clipboard.writeText(markdownText)}
-                className="btn btn-secondary text-xs px-2.5 py-1"
+                onClick={handleCopyMarkdown}
+                className={`codeblock-copy-btn ${copiedMarkdown ? 'is-copied' : ''}`}
+                title="Copy Markdown to clipboard"
+                aria-label={copiedMarkdown ? 'Markdown copied' : 'Copy Markdown'}
               >
-                Copy Markdown
+                {copiedMarkdown ? (
+                  <>
+                    <Check size={12} className="text-emerald-400" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    <span>Copy Markdown</span>
+                  </>
+                )}
               </button>
             </div>
-            <pre className="bg-slate-950/90 text-emerald-300 font-mono text-xs p-4 rounded-xl border border-slate-800 max-h-[600px] overflow-y-auto whitespace-pre-wrap leading-relaxed">
-              {markdownText || '# No content'}
+            <pre className="preview-code-box">
+              {markdownText || '# Untitled Document\n\n*No content blocks yet.*'}
             </pre>
           </div>
         )}
 
+        {/* Sanitized HTML Tab */}
         {viewMode === 'html' && (
-          <div className="glass-panel p-6 my-4">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <div className="preview-panel">
+            <div className="preview-panel-header">
               <div className="flex items-center gap-2">
-                <FileCode className="text-blue-400" size={18} />
-                <h3 className="font-display font-semibold text-slate-200 text-sm">
-                  Sanitized HTML Preview (DOMPurify Hardened)
-                </h3>
+                <FileCode className="text-emerald-400" size={17} />
+                <div>
+                  <h3 className="font-semibold text-slate-200 text-sm">
+                    Sanitized HTML Output
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Hardened with DOMPurify XSS sanitization</p>
+                </div>
               </div>
             </div>
-            <div className="bg-white text-slate-900 p-8 rounded-xl shadow-inner max-h-[600px] overflow-y-auto prose max-w-none">
-              <h1 className="text-2xl font-bold mb-4">{title}</h1>
+            <div className="preview-html-canvas">
+              <h1 className="text-3xl font-extrabold text-slate-900 border-b border-slate-200 pb-3 mb-6">
+                {title}
+              </h1>
               {nodes.map((n) => {
                 if (n.type === 'heading') {
                   const h = n as { level?: number; content?: string };
                   const Tag = `h${h.level || 1}` as keyof JSX.IntrinsicElements;
-                  return <Tag key={n.id} className="font-bold my-2">{h.content}</Tag>;
+                  return (
+                    <Tag
+                      key={n.id}
+                      className={`font-bold my-3 text-slate-900 ${
+                        (h.level || 1) === 1 ? 'text-2xl mt-6' : (h.level || 1) === 2 ? 'text-xl mt-5' : 'text-lg mt-4'
+                      }`}
+                    >
+                      {h.content}
+                    </Tag>
+                  );
                 }
                 if (n.type === 'paragraph') {
                   const p = n as { content?: string };
-                  return <p key={n.id} className="my-2">{p.content}</p>;
+                  return (
+                    <p key={n.id} className="my-2.5 text-slate-700 leading-relaxed text-[15px]">
+                      {p.content}
+                    </p>
+                  );
                 }
                 if (n.type === 'code_block') {
-                  const cb = n as { content?: string };
+                  const cb = n as { content?: string; language?: string };
                   return (
-                    <pre key={n.id} className="bg-slate-100 p-3 rounded font-mono text-sm my-2">
-                      <code>{cb.content}</code>
-                    </pre>
+                    <div key={n.id} className="my-3 rounded-lg overflow-hidden border border-slate-300">
+                      <div className="bg-slate-200 px-3 py-1 text-xs font-mono text-slate-600 font-semibold uppercase">
+                        {cb.language || 'code'}
+                      </div>
+                      <pre className="bg-slate-100 p-3.5 font-mono text-xs text-slate-800 overflow-x-auto">
+                        <code>{cb.content}</code>
+                      </pre>
+                    </div>
                   );
                 }
                 if (n.type === 'blockquote') {
                   const bq = n as { content?: string };
                   return (
-                    <blockquote key={n.id} className="border-l-4 border-blue-500 pl-4 italic my-2">
+                    <blockquote key={n.id} className="border-l-4 border-blue-500 pl-4 py-1 italic my-3 text-slate-600 bg-blue-50/50 rounded-r-md">
                       {bq.content}
                     </blockquote>
                   );
                 }
                 if (n.type === 'divider') {
-                  return <hr key={n.id} className="my-4" />;
+                  return <hr key={n.id} className="my-6 border-t border-slate-200" />;
                 }
                 return null;
               })}
@@ -258,3 +416,4 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
     </div>
   );
 };
+

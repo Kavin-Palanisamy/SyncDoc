@@ -62,7 +62,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   };
 
   return (
-    <div className="codeblock-container w-full">
+    <div className="codeblock-container w-full shadow-lg">
       <div className="codeblock-header">
         <div className="flex items-center gap-2">
           <select
@@ -72,21 +72,24 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
               if (isLocked) return;
               onLanguageChange(e.target.value);
             }}
-            className="text-xs bg-slate-900 text-blue-400 font-mono px-2 py-1 rounded border border-slate-700 hover:border-slate-600 focus:outline-none cursor-pointer"
+            className="codeblock-lang-select"
+            title="Select code language"
+            aria-label="Code language"
           >
             {POPULAR_LANGUAGES.map((lang) => (
-              <option key={lang} value={lang}>
+              <option key={lang} value={lang} className="bg-slate-900 text-slate-200">
                 {lang}
               </option>
             ))}
           </select>
-          <span className="text-xs text-slate-500 font-mono">AST Code Block</span>
+          <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">Code Snippet</span>
         </div>
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition-colors"
-          title="Copy Code"
+          className={`codeblock-copy-btn ${copied ? 'is-copied' : ''}`}
+          title="Copy code to clipboard"
+          aria-label={copied ? 'Code copied to clipboard' : 'Copy code to clipboard'}
         >
           {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -100,9 +103,10 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
         onInput={handleInput}
         onFocus={onFocus}
         onBlur={onBlur}
-        data-placeholder="// Write code here..."
+        data-placeholder="// Write or paste code snippet here..."
         className={`codeblock-editor block-editable ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
     </div>
   );
 };
+

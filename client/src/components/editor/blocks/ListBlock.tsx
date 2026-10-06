@@ -69,11 +69,13 @@ export const ListBlock: React.FC<ListBlockProps> = ({
           onClick={() => {
             if (!isLocked) handleAddItem(-1);
           }}
-          className={`text-xs text-cyan-400 flex items-center gap-1 hover:underline ${
+          className={`btn-editor-secondary text-xs h-7 px-2.5 ${
             isLocked ? 'opacity-40 cursor-not-allowed' : ''
           }`}
+          title="Add list item"
+          aria-label="Add list item"
         >
-          <Plus size={12} /> Add item
+          <Plus size={12} /> <span>Add item</span>
         </button>
       ) : (
         items.map((item, idx) => (
@@ -154,9 +156,15 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
   };
 
   return (
-    <div className="group/item flex items-start gap-2 w-full">
-      {listType === 'bullet' && <div className="list-bullet-bullet" />}
-      {listType === 'ordered' && <div className="list-bullet-number">{index + 1}.</div>}
+    <div className="group/item flex items-start gap-2.5 w-full py-0.5">
+      {listType === 'bullet' && (
+        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2.5 shrink-0 shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+      )}
+      {listType === 'ordered' && (
+        <div className="font-mono text-xs text-cyan-400 font-bold mt-1 shrink-0 min-w-[20px] select-none">
+          {index + 1}.
+        </div>
+      )}
       {listType === 'task' && (
         <input
           type="checkbox"
@@ -165,7 +173,7 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
           onChange={() => {
             if (!isLocked) onToggleCheck();
           }}
-          className="mt-1 cursor-pointer accent-blue-500 w-4 h-4 rounded"
+          className="mt-1 cursor-pointer accent-blue-500 w-4 h-4 rounded transition-transform active:scale-90"
         />
       )}
 
@@ -178,9 +186,9 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         data-placeholder="List item..."
-        className={`block-editable flex-1 text-slate-200 ${item.checked ? 'line-through text-slate-500' : ''} ${
-          isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''
-        }`}
+        className={`block-editable flex-1 text-slate-200 text-[15px] leading-relaxed ${
+          item.checked ? 'line-through text-slate-500' : ''
+        } ${isLocked ? 'opacity-70 cursor-not-allowed select-none' : ''}`}
       />
 
       <button
@@ -188,10 +196,11 @@ const ListItemRow: React.FC<ListItemRowProps> = ({
         onClick={() => {
           if (!isLocked) onDelete();
         }}
-        className={`opacity-0 group-hover/item:opacity-100 text-slate-500 hover:text-rose-400 p-1 transition-opacity ${
+        className={`opacity-0 group-hover/item:opacity-100 gutter-control-btn is-delete ${
           isLocked ? 'pointer-events-none' : ''
         }`}
         title="Delete item"
+        aria-label="Delete item"
       >
         <Trash2 size={12} />
       </button>

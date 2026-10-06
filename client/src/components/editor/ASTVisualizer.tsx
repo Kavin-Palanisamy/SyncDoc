@@ -119,31 +119,35 @@ export const ASTVisualizer: React.FC<ASTVisualizerProps> = ({
   };
 
   return (
-    <div className="glass-panel p-4 my-4">
-      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <Network className="text-cyan-400" size={18} />
-          <h3 className="font-display font-semibold text-slate-200 text-sm">
-            Live AST Structural Inspector
-          </h3>
-          <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">
-            {nodes.length + 1} Nodes
-          </span>
+    <div className="preview-panel">
+      <div className="preview-panel-header">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 flex items-center justify-center">
+            <Network size={16} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-100 text-sm">
+              AST Structural Inspector
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              Live hierarchical tree &bull; {nodes.length + 1} registered nodes
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+        <div className="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-white/[0.08]">
           <button
             onClick={() => setViewMode('tree')}
-            className={`px-3 py-1 rounded text-xs flex items-center gap-1.5 transition-colors ${
-              viewMode === 'tree' ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              viewMode === 'tree' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Layers size={12} /> Tree View
           </button>
           <button
             onClick={() => setViewMode('json')}
-            className={`px-3 py-1 rounded text-xs flex items-center gap-1.5 transition-colors ${
-              viewMode === 'json' ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              viewMode === 'json' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Code size={12} /> JSON AST
@@ -152,11 +156,11 @@ export const ASTVisualizer: React.FC<ASTVisualizerProps> = ({
       </div>
 
       {viewMode === 'tree' ? (
-        <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 max-h-96 overflow-y-auto">
+        <div className="bg-[#090d16] p-4 rounded-xl border border-white/[0.08] max-h-[500px] overflow-y-auto">
           {renderTreeNode(rootAST)}
         </div>
       ) : (
-        <pre className="bg-slate-950/90 text-cyan-300 font-mono text-xs p-4 rounded-lg border border-slate-800 max-h-96 overflow-y-auto leading-relaxed">
+        <pre className="bg-[#090d16] text-cyan-300 font-mono text-xs p-4 rounded-xl border border-white/[0.08] max-h-[500px] overflow-y-auto leading-relaxed">
           {JSON.stringify(rootAST, null, 2)}
         </pre>
       )}

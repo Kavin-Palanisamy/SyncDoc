@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layers, Plus, FileText, Settings, User, Menu, X } from "lucide-react";
+import { Layers, Plus, FileText, Settings, User, Menu, X, Sparkles } from "lucide-react";
 import "./Sidebar.css";
 
 /**
@@ -24,6 +24,11 @@ export default function Sidebar({
   onNewDocument = () => {},
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [docFilter, setDocFilter] = useState("");
+
+  const filteredDocs = docFilter.trim()
+    ? documents.filter((d) => d.title.toLowerCase().includes(docFilter.toLowerCase()))
+    : documents;
 
   return (
     <>
@@ -31,10 +36,10 @@ export default function Sidebar({
         type="button"
         className="sidebar-mobile-toggle"
         onClick={() => setIsMobileOpen((v) => !v)}
-        aria-label={isMobileOpen ? "Close sidebar" : "Open sidebar"}
+        aria-label={isMobileOpen ? "Close navigation" : "Open navigation"}
         aria-expanded={isMobileOpen}
       >
-         <Menu size={20} />
+        {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
       {isMobileOpen && (
@@ -46,43 +51,58 @@ export default function Sidebar({
       )}
 
       <aside className={`sidebar ${isMobileOpen ? "sidebar--open" : ""}`}>
+        {/* Brand */}
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
-            <Layers size={18} />
+            <Layers size={17} />
           </div>
           <div className="sidebar-brand-text">
             <span className="sidebar-brand-name">SyncDoc</span>
-            <span className="sidebar-brand-subtitle">Collaborative workspace</span>
+            <span className="sidebar-brand-subtitle">Collaborative Workspace</span>
           </div>
         </div>
 
+        {/* Primary Action */}
         <button
           type="button"
           className="sidebar-new-doc"
-          onClick={onNewDocument}
+          onClick={() => {
+            onNewDocument();
+            setIsMobileOpen(false);
+          }}
         >
-          <Plus size={16} />
+          <Plus size={15} />
           <span>New Document</span>
         </button>
 
+        {/* Documents Section */}
         <div className="sidebar-section">
-          <h2 className="sidebar-section-label">Documents</h2>
+          <div className="sidebar-section-header">
+            <h2 className="sidebar-section-label">Documents</h2>
+            <span className="sidebar-doc-counter">{documents.length}</span>
+          </div>
 
-          <nav className="sidebar-doc-list">
-            {documents.length === 0 ? (
-              <p className="sidebar-empty">No documents yet</p>
+          <nav className="sidebar-doc-list" aria-label="Documents catalog">
+            {filteredDocs.length === 0 ? (
+              <div className="sidebar-empty">
+                <FileText size={14} className="sidebar-empty-icon" />
+                <span>{documents.length === 0 ? "No documents yet" : "No matches"}</span>
+              </div>
             ) : (
-              documents.map((doc) => {
+              filteredDocs.map((doc) => {
                 const isActive = doc._id === activeDocumentId;
                 return (
                   <button
                     key={doc._id}
                     type="button"
-                    onClick={() => onSelectDocument(doc._id)}
+                    onClick={() => {
+                      onSelectDocument(doc._id);
+                      setIsMobileOpen(false);
+                    }}
                     className={`sidebar-doc-item ${isActive ? "sidebar-doc-item--active" : ""}`}
                     title={doc.title}
                   >
-                    <FileText size={15} className="sidebar-doc-icon" />
+                    <FileText size={14} className="sidebar-doc-icon" />
                     <span className="sidebar-doc-title">{doc.title}</span>
                   </button>
                 );
@@ -93,18 +113,24 @@ export default function Sidebar({
 
         <div className="sidebar-spacer" />
 
+        {/* Bottom Workspace Status & Footer */}
         <div className="sidebar-bottom">
-          {/* No existing Settings/Profile functionality found — styled as
-              inert placeholders. Add onClick handlers here once real
-              functionality exists. */}
-          <button type="button" className="sidebar-bottom-item">
-            <Settings size={16} />
-            <span>Settings</span>
-          </button>
-          <button type="button" className="sidebar-bottom-item">
-            <User size={16} />
-            <span>Profile</span>
-          </button>
+          <div className="sidebar-workspace-pill">
+            <span className="sidebar-status-dot" />
+            <span className="sidebar-status-text">CRDT Engine Live</span>
+            <Sparkles size={11} className="sidebar-status-sparkle" />
+          </div>
+
+          <div className="sidebar-footer-nav">
+            <button type="button" className="sidebar-bottom-item" title="Workspace Settings">
+              <Settings size={15} />
+              <span>Settings</span>
+            </button>
+            <button type="button" className="sidebar-bottom-item" title="Active Profile">
+              <User size={15} />
+              <span>Workspace</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>

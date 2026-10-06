@@ -206,65 +206,74 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
   };
 
   return (
-    <div className="relative group">
-      {/* Insert gap button ABOVE block */}
+    <div className="relative group/block-item">
+      {/* Insert gap trigger line ABOVE block */}
       <div
         className="insert-gap-btn"
         onClick={() => setShowInsertMenu(!showInsertMenu)}
-        title="Insert block here"
+        title="Add content here"
+        role="button"
+        tabIndex={0}
       >
         <div className="insert-gap-line" />
-        <div className="insert-gap-icon">
-          <Plus size={12} />
+        <div className="insert-gap-chip">
+          <Plus size={11} />
+          <span>Add content</span>
         </div>
       </div>
 
+      {/* Insert Block Dropdown Menu */}
       {showInsertMenu && (
-        <div className="absolute top-0 left-12 z-30 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1 flex gap-1 animate-fade-in">
+        <div className="absolute top-2 left-10 z-30 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl p-1.5 flex flex-wrap gap-1 max-w-sm animate-menu-enter">
           <button
             onClick={() => {
               insertBlock('paragraph', index);
               setShowInsertMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white text-xs flex items-center gap-1"
+            className="btn-insert-chip"
           >
-            <Type size={14} /> Paragraph
+            <Type size={12} className="insert-chip-icon text-slate-400" />
+            <span>Paragraph</span>
           </button>
           <button
             onClick={() => {
               insertBlock('heading', index, { level: 2 });
               setShowInsertMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white text-xs flex items-center gap-1"
+            className="btn-insert-chip"
           >
-            <Heading size={14} /> Heading
+            <Heading size={12} className="insert-chip-icon text-purple-400" />
+            <span>Heading</span>
           </button>
           <button
             onClick={() => {
               insertBlock('code_block', index);
               setShowInsertMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white text-xs flex items-center gap-1"
+            className="btn-insert-chip"
           >
-            <Code size={14} /> Code
+            <Code size={12} className="insert-chip-icon text-amber-400" />
+            <span>Code</span>
           </button>
           <button
             onClick={() => {
               insertBlock('list', index);
               setShowInsertMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white text-xs flex items-center gap-1"
+            className="btn-insert-chip"
           >
-            <List size={14} /> List
+            <List size={12} className="insert-chip-icon text-cyan-400" />
+            <span>List</span>
           </button>
           <button
             onClick={() => {
               insertBlock('blockquote', index);
               setShowInsertMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white text-xs flex items-center gap-1"
+            className="btn-insert-chip"
           >
-            <Quote size={14} /> Quote
+            <Quote size={12} className="insert-chip-icon text-pink-400" />
+            <span>Quote</span>
           </button>
         </div>
       )}
@@ -275,7 +284,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
           isLockedByOther ? 'is-locked-remote is-active-remote' : ''
         }`}
         style={{
-          borderLeftColor: isLockedByOther ? (remoteLock?.userColor || '#3b82f6') : undefined,
+          boxShadow: isLockedByOther
+            ? `inset 3px 0 0 0 ${remoteLock?.userColor || '#f43f5e'}`
+            : isLocalActive
+            ? 'inset 2px 0 0 0 var(--accent-primary)'
+            : undefined,
         }}
       >
         {/* Prominent Remote Lock Banner directly above block content */}
@@ -284,19 +297,20 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
             className="remote-lock-banner"
             style={{
               borderColor: remoteLock.userColor ? `${remoteLock.userColor}40` : 'rgba(59, 130, 246, 0.25)',
+              backgroundColor: remoteLock.userColor ? `${remoteLock.userColor}15` : 'rgba(59, 130, 246, 0.1)',
             }}
           >
             <div
               className="remote-lock-badge"
               style={{ backgroundColor: remoteLock.userColor || '#3b82f6' }}
             >
-              <Lock size={11} className="text-white shrink-0" />
-              <span className="text-white font-semibold text-xs">
-                Locked by {remoteLock.lockedByName || 'Collaborator'}
+              <Lock size={10} className="text-white shrink-0" />
+              <span className="text-white font-bold text-[11px]">
+                {remoteLock.lockedByName || 'Collaborator'}
               </span>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
-              Editing this block &bull; Read-only
+            <span className="text-[11px] text-slate-300 font-medium">
+              is actively editing &bull; Read-only lock
             </span>
           </div>
         )}
@@ -314,18 +328,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
         )}
 
         {/* Left Actions Toolbar */}
-        <div className="block-actions">
+        <div className="block-actions" aria-label="Block controls">
           <button
             disabled={isFirst || isLockedByOther}
             onClick={() => {
               if (!isLockedByOther) moveBlock(node.id, 'up');
             }}
-            className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white ${
-              isFirst || isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
-            }`}
+            className="gutter-control-btn"
             title={isLockedByOther ? 'Block is locked' : 'Move block up'}
+            aria-label="Move block up"
           >
-            <ChevronUp size={12} />
+            <ChevronUp size={13} />
           </button>
 
           <button
@@ -333,12 +346,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
             onClick={() => {
               if (!isLockedByOther) moveBlock(node.id, 'down');
             }}
-            className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white ${
-              isLast || isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
-            }`}
+            className="gutter-control-btn"
             title={isLockedByOther ? 'Block is locked' : 'Move block down'}
+            aria-label="Move block down"
           >
-            <ChevronDown size={12} />
+            <ChevronDown size={13} />
           </button>
 
           {/* Type switcher dropdown trigger */}
@@ -348,69 +360,68 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
               onClick={() => {
                 if (!isLockedByOther) setShowTypeMenu(!showTypeMenu);
               }}
-              className={`p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-cyan-400 ${
-                isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
-              }`}
+              className="gutter-control-btn"
               title={isLockedByOther ? 'Block is locked' : 'Change block type'}
+              aria-label="Change block type"
             >
-              <Type size={12} />
+              <Type size={13} />
             </button>
 
             {showTypeMenu && !isLockedByOther && (
-              <div className="absolute left-full top-0 ml-1 z-30 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1 w-32 animate-fade-in">
+              <div className="absolute left-full top-0 ml-1.5 z-30 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl p-1.5 w-36 animate-menu-enter">
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'paragraph');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Type size={12} /> Paragraph
+                  <Type size={13} className="text-slate-400" /> Paragraph
                 </button>
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'heading');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Heading size={12} /> Heading
+                  <Heading size={13} className="text-purple-400" /> Heading
                 </button>
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'code_block');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Code size={12} /> Code Block
+                  <Code size={13} className="text-amber-400" /> Code Block
                 </button>
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'list');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <List size={12} /> List
+                  <List size={13} className="text-cyan-400" /> List
                 </button>
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'blockquote');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Quote size={12} /> Quote
+                  <Quote size={13} className="text-pink-400" /> Quote
                 </button>
                 <button
                   onClick={() => {
                     changeBlockType(node.id, 'divider');
                     setShowTypeMenu(false);
                   }}
-                  className="w-full text-left px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 rounded flex items-center gap-1.5"
+                  className="w-full text-left px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-white/[0.08] rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Minus size={12} /> Divider
+                  <Minus size={13} className="text-slate-400" /> Divider
                 </button>
               </div>
             )}
@@ -421,12 +432,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = React.memo(({
             onClick={() => {
               if (!isLockedByOther) deleteBlock(node.id);
             }}
-            className={`p-1 rounded hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 ${
-              isLockedByOther ? 'opacity-30 cursor-not-allowed' : ''
-            }`}
+            className="gutter-control-btn is-delete"
             title={isLockedByOther ? 'Block is locked' : 'Delete block'}
+            aria-label="Delete block"
           >
-            <Trash2 size={12} />
+            <Trash2 size={13} />
           </button>
         </div>
 

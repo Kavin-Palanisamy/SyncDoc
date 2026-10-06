@@ -10,12 +10,14 @@ import {
   BookOpen,
   Code,
   ShieldCheck,
-  Zap,
+  ArrowRight,
+  RefreshCw,
+  Check,
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
-  import "./DashboardPage.css";
-  import Sidebar from '../components/Sidebar.jsx';
+import "./DashboardPage.css";
+import Sidebar from '../components/Sidebar.jsx';
 
 interface DashboardPageProps {
   onOpenDocument: (documentId: string) => void;
@@ -24,6 +26,7 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) => {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importMarkdownText, setImportMarkdownText] = useState('');
@@ -31,9 +34,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
 
   // User preferences
   const [userName, setUserName] = useState(() => localStorage.getItem('syncdoc_user_name') || 'Alex Chen');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(userName);
 
   const fetchDocuments = async (retries = 2) => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const res = await ApiService.listDocuments(searchQuery);
       setDocuments(res.documents);
@@ -45,6 +51,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
         return;
       }
       console.error('Failed to load documents:', err);
+      setErrorMessage('Unable to connect to document catalog. Please check server status.');
     } finally {
       setLoading(false);
     }
@@ -162,281 +169,360 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
     }
   };
 
-  const handleUpdateUserName = (newName: string) => {
-    setUserName(newName);
-    localStorage.setItem('syncdoc_user_name', newName);
+  const handleSaveUserName = () => {
+    const trimmed = tempName.trim() || 'Alex Chen';
+    setUserName(trimmed);
+    localStorage.setItem('syncdoc_user_name', trimmed);
+    setIsEditingName(false);
   };
 
   return (
-    <div className="dashboard-page min-h-screen text-slate-100 flex selection:bg-blue-600 selection:text-white">
-  <Sidebar
-    documents={documents}
-    activeDocumentId={null}
-    onSelectDocument={onOpenDocument}
-    onNewDocument={() => handleCreateFromTemplate('blank')}
-  />
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-[0_1px_0_0_rgba(255,255,255,0.03)]">
-    <div className="dash-header-inner max-w-6xl mx-auto px-6 flex items-center justify-between">
-    <div className="sidebar-brand" style={{ padding: 0 }}>
-      <div className="sidebar-brand-icon">
-        <Layers size={18} />
-      </div>
-      <div className="sidebar-brand-text">
-        <span className="sidebar-brand-name">SyncDoc</span>
-        <span className="sidebar-brand-subtitle">Collaborative AST Document Engine</span>
-      </div>
-    </div>
+    <div className="dashboard-page">
+      {/* Sidebar Navigation */}
+      <Sidebar
+        documents={documents}
+        activeDocumentId={null}
+        onSelectDocument={onOpenDocument}
+        onNewDocument={() => handleCreateFromTemplate('blank')}
+      />
 
-
-    {/* User Profile Box */}
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2.5 bg-slate-900/80 border border-slate-800 pl-2 pr-3 py-1.5 rounded-xl text-xs">
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-          {userName.trim().charAt(0).toUpperCase() || 'U'}
-        </div>
-        <input
-          type="text"
-          value={userName}
-          onChange={(e) => handleUpdateUserName(e.target.value)}
-          className="bg-transparent text-slate-100 font-semibold outline-none w-28 hover:text-blue-400 focus:text-blue-400"
-          title="Click to change your collaborator display name"
-        />
-      </div>
-    </div>
-  </div>
-</header>
-
-      {/* Hero / Quick Actions */}
-      <section className="max-w-6xl mx-auto px-6 pt-10 pb-16 w-full">
-  <div className="dash-section-header">
-    <h2 className="dash-eyebrow text-[var(--text-muted)]">
-      Start creating
-    </h2>
-    <p className="dash-eyebrow-desc text-[var(--text-secondary)]">
-      Spin up a new document or import existing content.
-    </p>
-  </div>
-
-  <div className="dash-hero-grid">
-          {/* Quick Create Blank */}
-          <div
-            onClick={() => handleCreateFromTemplate('blank')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-950/80 text-blue-400 flex items-center justify-center border border-blue-800/60 group-hover:scale-110 transition-transform">
-                <Plus size={20} />
-              </div>
-              <span className="dash-card-tag text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded border border-blue-900">
-                Quick Start
-              </span>
+      {/* Main Content Area */}
+      <div className="dashboard-content-area">
+        {/* Top Navbar */}
+        <header className="dashboard-topbar">
+          <div className="dashboard-topbar-inner">
+            <div className="dashboard-topbar-left">
+              <span className="dashboard-workspace-crumb">Workspace</span>
+              <span className="dashboard-crumb-separator">/</span>
+              <span className="dashboard-crumb-current">All Documents</span>
             </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-cyan-400 transition-colors">
-                New Blank Document
-              </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
-                Start from a clean slate with block-based editing and Yjs real-time sync.
-              </p>
-            </div>
-          </div>
 
-          {/* Template: RFC Spec */}
-          <div
-            onClick={() => handleCreateFromTemplate('rfc')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-purple-950/80 text-purple-400 flex items-center justify-center border border-purple-800/60 group-hover:scale-110 transition-transform">
-                <BookOpen size={20} />
-              </div>
-              <span className="dash-card-tag text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-900">
-                Template
-              </span>
-            </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
-                Architecture RFC
-              </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
-                Technical design spec with problem statement, architecture, and code blocks.
-              </p>
-            </div>
-          </div>
-
-          {/* Template: API Spec */}
-          <div
-            onClick={() => handleCreateFromTemplate('api')}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-cyan-950/80 text-cyan-400 flex items-center justify-center border border-cyan-800/60 group-hover:scale-110 transition-transform">
-                <Code size={20} />
-              </div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900">
-                Template
-              </span>
-            </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
-                API Technical Spec
-              </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
-                Pre-configured structural template with endpoints, methods, and nested lists.
-              </p>
-            </div>
-          </div>
-
-          {/* Markdown Importer */}
-          <div
-            onClick={() => setIsImportModalOpen(true)}
-            className="dashboard-glass-card p-5 cursor-pointer flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-lg bg-emerald-950/80 text-emerald-400 flex items-center justify-center border border-emerald-800/60 group-hover:scale-110 transition-transform">
-                <Upload size={20} />
-              </div>
-              <span className="dash-card-tag text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900">
-                Converter
-              </span>
-            </div>
-            <div>
-              <h3 className="dash-card-title font-display text-white group-hover:text-purple-400 transition-colors">
-                Import Markdown to AST
-              </h3>
-              <p className="dash-card-desc text-[var(--text-secondary)]">
-                Parse existing Markdown files into fully validated structural AST documents.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Catalog Filter */}
-        <div className="dash-search-row flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-            <input
-              type="text"
-              placeholder="Search documents by title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="dashboard-input pl-10 text-xs"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <ShieldCheck size={14} /> Mongoose Recursive Validation Active
-            </span>
-          </div>
-        </div>
-
-        {/* Document Cards Grid */}
-        <div className="dash-docs-header flex items-center justify-between border-b border-slate-800/70">
-          <h2 className="dash-eyebrow text-slate-500">
-            Your documents
-          </h2>
-          {!loading && (
-            <span className="dash-meta-count text-slate-600 font-mono">
-              {documents.length} {documents.length === 1 ? 'document' : 'documents'}
-            </span>
-          )}
-        </div>
-        {loading ? (
-          <div className="text-center py-20 text-slate-500 text-sm">
-            <Zap className="animate-spin inline-block text-blue-500 mb-2" size={24} />
-            <p>Loading document catalog...</p>
-          </div>
-        ) : documents.length === 0 ? (
-          <div className="text-center py-20 border-2 border-dashed border-slate-800 rounded-2xl p-8">
-            <FileText className="mx-auto text-slate-600 mb-3" size={36} />
-            <h3 className="dash-card-title text-slate-300 font-display mb-1">
-              No documents found
-            </h3>
-            <p className="dash-card-desc text-slate-500 mb-4">
-              Create a new document from scratch or choose a template above to get started.
-            </p>
-            <button
-              onClick={() => handleCreateFromTemplate('blank')}
-              className="dashboard-btn dashboard-btn-primary text-xs"
-            >
-              <Plus size={14} /> Create First Document
-            </button>
-          </div>
-        ) : (
-          <div className="dash-doc-grid">
-                        {documents.map((doc, index) => {
-              const nodeCount = (doc.root?.children?.length || 0) + 1;
-              const snippet =
-                (doc.root?.children?.[1] as { content?: string } | undefined)?.content ||
-                (doc.root?.children?.[0] as { content?: string } | undefined)?.content ||
-                'Empty document';
-              const accentClass = ['doc-accent-verdigris', 'doc-accent-gold', 'doc-accent-indigo'][index % 3];
-
-              return (
-                <div
-                  key={doc._id}
-                  onClick={() => onOpenDocument(doc._id)}
-                  className={`doc-card ${accentClass} cursor-pointer group`}
-                >
-                  <button
-                    onClick={(e) => handleDeleteDocument(doc._id, e)}
-                    className="doc-card-delete opacity-0 group-hover:opacity-100 p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-all"
-                    title="Delete Document"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-
-                  <div className="doc-card-icon">
-                    <FileText size={18} />
-                  </div>
-
-                  <h3 className="dash-card-title text-slate-100 group-hover:text-white transition-colors line-clamp-1">
-                    {doc.title}
-                  </h3>
-
-                  <p className="dash-card-desc text-slate-400 line-clamp-2">
-                    {snippet}
-                  </p>
-
-                  <div className="doc-card-footer">
-                    <span className="dash-card-meta doc-card-meta-accent flex items-center gap-1 font-mono">
-                      <Layers size={11} /> v{doc.version} &bull; {nodeCount} blocks
-                    </span>
-                    <span className="dash-card-meta flex items-center gap-1 text-slate-500">
-                      <Clock size={11} /> {new Date(doc.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
+            <div className="dashboard-topbar-actions">
+              {/* User Identity Box */}
+              <div className="dashboard-user-pill">
+                <div className="dashboard-user-avatar">
+                  {userName.trim().charAt(0).toUpperCase() || 'U'}
                 </div>
-              );
-            })}
+
+                {isEditingName ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      onBlur={handleSaveUserName}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveUserName()}
+                      className="dashboard-name-input"
+                    />
+                    <button
+                      onClick={handleSaveUserName}
+                      className="text-emerald-400 hover:text-emerald-300 p-0.5"
+                      title="Save name"
+                    >
+                      <Check size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setTempName(userName);
+                      setIsEditingName(true);
+                    }}
+                    className="dashboard-name-btn"
+                    title="Click to change your display name"
+                  >
+                    <span>{userName}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Primary New Document CTA */}
+              <button
+                onClick={() => handleCreateFromTemplate('blank')}
+                className="dashboard-primary-btn"
+              >
+                <Plus size={15} />
+                <span>New Document</span>
+              </button>
+            </div>
           </div>
-        )}
-      </section>
+        </header>
+
+        {/* Main Body */}
+        <main className="dashboard-main-container">
+          {/* Workspace Hero */}
+          <section className="dashboard-hero-section">
+            <div className="dashboard-hero-header">
+              <div>
+                <h1 className="dashboard-hero-title">Technical Workspace</h1>
+                <p className="dashboard-hero-desc">
+                  Collaborative AST document engine with real-time conflict-free synchronization.
+                </p>
+              </div>
+
+              <div className="dashboard-engine-badge">
+                <ShieldCheck size={14} className="text-emerald-400" />
+                <span>Mongoose Recursive AST Validation</span>
+              </div>
+            </div>
+
+            {/* Quick Action / Templates Grid */}
+            <div className="dashboard-action-grid">
+              {/* Quick Blank Doc */}
+              <div
+                onClick={() => handleCreateFromTemplate('blank')}
+                className="action-card action-card--primary group"
+              >
+                <div className="action-card-header">
+                  <div className="action-card-icon action-card-icon--blue">
+                    <Plus size={18} />
+                  </div>
+                  <span className="action-card-badge action-card-badge--blue">Instant</span>
+                </div>
+                <div className="action-card-body">
+                  <h3 className="action-card-title">Blank Document</h3>
+                  <p className="action-card-desc">
+                    Fresh structural canvas with block editing and real-time collaborative syncing.
+                  </p>
+                </div>
+                <div className="action-card-arrow">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              {/* RFC Template */}
+              <div
+                onClick={() => handleCreateFromTemplate('rfc')}
+                className="action-card group"
+              >
+                <div className="action-card-header">
+                  <div className="action-card-icon action-card-icon--purple">
+                    <BookOpen size={18} />
+                  </div>
+                  <span className="action-card-badge action-card-badge--purple">Template</span>
+                </div>
+                <div className="action-card-body">
+                  <h3 className="action-card-title">Architecture RFC</h3>
+                  <p className="action-card-desc">
+                    Engineering design document with problem statement, design goals, and code snippets.
+                  </p>
+                </div>
+                <div className="action-card-arrow">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              {/* API Spec Template */}
+              <div
+                onClick={() => handleCreateFromTemplate('api')}
+                className="action-card group"
+              >
+                <div className="action-card-header">
+                  <div className="action-card-icon action-card-icon--cyan">
+                    <Code size={18} />
+                  </div>
+                  <span className="action-card-badge action-card-badge--cyan">Template</span>
+                </div>
+                <div className="action-card-body">
+                  <h3 className="action-card-title">API Technical Spec</h3>
+                  <p className="action-card-desc">
+                    Structured service contract with endpoint listings, data types, and method definitions.
+                  </p>
+                </div>
+                <div className="action-card-arrow">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+
+              {/* Markdown Importer */}
+              <div
+                onClick={() => setIsImportModalOpen(true)}
+                className="action-card group"
+              >
+                <div className="action-card-header">
+                  <div className="action-card-icon action-card-icon--emerald">
+                    <Upload size={18} />
+                  </div>
+                  <span className="action-card-badge action-card-badge--emerald">Parser</span>
+                </div>
+                <div className="action-card-body">
+                  <h3 className="action-card-title">Import Markdown</h3>
+                  <p className="action-card-desc">
+                    Parse and validate external Markdown files directly into full structural AST trees.
+                  </p>
+                </div>
+                <div className="action-card-arrow">
+                  <ArrowRight size={14} />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Search & Filter Bar */}
+          <section className="dashboard-catalog-section">
+            <div className="dashboard-filter-row">
+              <div className="dashboard-search-wrap">
+                <Search size={15} className="dashboard-search-icon" />
+                <input
+                  type="text"
+                  placeholder="Filter documents by title..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="dashboard-search-input"
+                />
+              </div>
+
+              <div className="dashboard-filter-meta">
+                <span className="dashboard-doc-count-badge">
+                  {documents.length} {documents.length === 1 ? 'document' : 'documents'}
+                </span>
+              </div>
+            </div>
+
+            {/* Error State */}
+            {errorMessage && (
+              <div className="dashboard-error-banner">
+                <p>{errorMessage}</p>
+                <button onClick={() => fetchDocuments()} className="dashboard-retry-btn">
+                  <RefreshCw size={13} /> Retry
+                </button>
+              </div>
+            )}
+
+            {/* Loading Skeleton */}
+            {loading && !errorMessage ? (
+              <div className="dashboard-docs-grid">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="doc-skeleton-card">
+                    <div className="doc-skeleton-icon" />
+                    <div className="doc-skeleton-title" />
+                    <div className="doc-skeleton-snippet" />
+                    <div className="doc-skeleton-snippet short" />
+                    <div className="doc-skeleton-footer">
+                      <div className="doc-skeleton-badge" />
+                      <div className="doc-skeleton-time" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !loading && documents.length === 0 ? (
+              /* Empty State */
+              <div className="dashboard-empty-state">
+                <div className="dashboard-empty-icon-wrap">
+                  <FileText size={28} className="text-slate-400" />
+                </div>
+                <h3 className="dashboard-empty-title">
+                  {searchQuery ? 'No matching documents found' : 'No documents in workspace'}
+                </h3>
+                <p className="dashboard-empty-desc">
+                  {searchQuery
+                    ? `No documents matched "${searchQuery}". Clear your search or create a new document.`
+                    : 'Start creating technical documents with collaborative real-time AST conflict resolution.'}
+                </p>
+                <div className="dashboard-empty-actions">
+                  {searchQuery ? (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="dashboard-secondary-btn"
+                    >
+                      Clear Search
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => handleCreateFromTemplate('blank')}
+                    className="dashboard-primary-btn"
+                  >
+                    <Plus size={15} /> Create First Document
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Document Grid */
+              <div className="dashboard-docs-grid">
+                {documents.map((doc) => {
+                  const nodeCount = (doc.root?.children?.length || 0) + 1;
+                  const snippet =
+                    (doc.root?.children?.[1] as { content?: string } | undefined)?.content ||
+                    (doc.root?.children?.[0] as { content?: string } | undefined)?.content ||
+                    'Clean structural document';
+
+                  return (
+                    <article
+                      key={doc._id}
+                      onClick={() => onOpenDocument(doc._id)}
+                      className="doc-card group"
+                    >
+                      <button
+                        onClick={(e) => handleDeleteDocument(doc._id, e)}
+                        className="doc-card-delete-btn"
+                        title="Delete Document"
+                        aria-label="Delete Document"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+
+                      <div className="doc-card-top">
+                        <div className="doc-card-icon-pill">
+                          <FileText size={16} />
+                        </div>
+                        <span className="doc-card-version-pill font-mono">
+                          v{doc.version}
+                        </span>
+                      </div>
+
+                      <h3 className="doc-card-heading" title={doc.title}>
+                        {doc.title}
+                      </h3>
+
+                      <p className="doc-card-preview">
+                        {snippet}
+                      </p>
+
+                      <div className="doc-card-bottom">
+                        <div className="doc-card-meta-pill">
+                          <Layers size={11} />
+                          <span>{nodeCount} {nodeCount === 1 ? 'block' : 'blocks'}</span>
+                        </div>
+                        <div className="doc-card-time-pill">
+                          <Clock size={11} />
+                          <span>{new Date(doc.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
 
       {/* Markdown Import Modal */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl">
-            <div className="dash-modal-head border-b border-slate-800 flex items-center justify-between">
+        <div className="dashboard-modal-backdrop">
+          <div className="dashboard-modal-card animate-modal-enter">
+            <div className="dashboard-modal-header">
               <div className="flex items-center gap-2">
-                <Upload className="text-emerald-400" size={18} />
-                <h3 className="dash-card-title font-display text-slate-100">
-                  Import Markdown into Structural AST
-                </h3>
+                <div className="w-8 h-8 rounded-lg bg-emerald-950/70 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
+                  <Upload size={16} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-100 text-sm">Import Markdown to AST</h3>
+                  <p className="text-xs text-slate-400">Generates validated AST nodes from Markdown</p>
+                </div>
               </div>
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white p-1 rounded"
               >
                 &times;
               </button>
             </div>
 
-            <div className="dash-modal-body">
-              <div>
-                <label className="dash-card-tag block normal-case text-slate-300 mb-1">
+            <div className="dashboard-modal-body">
+              <div className="form-group">
+                <label className="form-label">
                   Document Title (Optional)
                 </label>
                 <input
@@ -444,37 +530,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                   placeholder="Auto-detected from first heading if left blank"
                   value={importTitle}
                   onChange={(e) => setImportTitle(e.target.value)}
-                  className="dashboard-input text-xs"
+                  className="form-input"
                 />
               </div>
 
-              <div>
-                <label className="dash-card-tag block normal-case text-slate-300 mb-1">
-                  Markdown Content
+              <div className="form-group">
+                <label className="form-label">
+                  Markdown Source
                 </label>
                 <textarea
                   rows={8}
-                  placeholder="# Technical Spec&#10;&#10;Write markdown content here..."
+                  placeholder="# Technical Spec&#10;&#10;Write or paste markdown content here..."
                   value={importMarkdownText}
                   onChange={(e) => setImportMarkdownText(e.target.value)}
-                  className="dashboard-input font-mono text-xs"
+                  className="form-textarea font-mono"
                 />
               </div>
             </div>
 
-            <div className="dash-modal-foot bg-slate-950/60 border-t border-slate-800 flex items-center justify-end gap-2">
+            <div className="dashboard-modal-footer">
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="dashboard-btn dashboard-btn-ghost text-xs"
+                className="dashboard-secondary-btn"
               >
                 Cancel
               </button>
               <button
                 disabled={!importMarkdownText.trim()}
                 onClick={handleImportMarkdownSubmit}
-                className="dashboard-btn dashboard-btn-primary text-xs"
+                className="dashboard-primary-btn"
               >
-                <Upload size={14} /> Parse & Create Document
+                <Upload size={14} /> Parse & Initialize Document
               </button>
             </div>
           </div>

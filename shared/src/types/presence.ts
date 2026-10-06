@@ -43,6 +43,17 @@ export interface DocumentVersionInfo {
   nodeCount: number;
 }
 
+export interface TeamMember {
+  userId: string;
+  userName: string;
+  userColor?: string;
+  role?: string;
+  isOnline: boolean;
+  currentDocId?: string | null;
+  currentDocTitle?: string | null;
+  lastActive?: number | string;
+}
+
 export interface WebSocketEvents {
   // Client to Server
   'join-document': { documentId: string; user: Omit<UserPresence, 'lastActive'> };
@@ -52,6 +63,8 @@ export interface WebSocketEvents {
   'yjs-update': { documentId: string; update: Uint8Array | number[] };
   'request-sync': { documentId: string };
   'save-snapshot': { documentId: string; changeDescription?: string; author?: string };
+  'register-presence': { userId: string; userName: string; userColor?: string };
+  'request-team-presence': Record<string, never>;
 
   // Server to Client
   'document-state': { documentId: string; update: number[]; version: number };
@@ -62,4 +75,5 @@ export interface WebSocketEvents {
   'block-state-sync': { documentId: string; locks: Record<string, BlockLockState> };
   'conflict-detected': { documentId: string; conflict: unknown };
   'version-created': { documentId: string; version: DocumentVersionInfo };
+  'team-presence-sync': { members: TeamMember[]; onlineCount: number };
 }

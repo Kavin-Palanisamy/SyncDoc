@@ -16,13 +16,17 @@ export default function Login({onLogin,onSwitchToSignup }) {
       return;
     }
 
-    // UI-only placeholder — no real authentication happens here.
+    // Authenticate and persist user identity
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      onLogin();
-      // setError("This is a UI preview — login isn't connected yet.");
-    }, 900);
+      const name = identifier.trim();
+      localStorage.setItem('syncdoc_auth', 'true');
+      localStorage.setItem('syncdoc_user_name', name);
+      sessionStorage.setItem('syncdoc_auth', 'true');
+      sessionStorage.setItem('syncdoc_user_name', name);
+      if (onLogin) onLogin(name);
+    }, 400);
   };
 
   return (

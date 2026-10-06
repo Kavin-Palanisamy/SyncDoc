@@ -13,17 +13,21 @@ import {
   ArrowRight,
   RefreshCw,
   Check,
+  LogOut,
 } from 'lucide-react';
 import { ApiService, DocumentSummary } from '../services/api.js';
-import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode } from '@syncdoc/shared';
+import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode, TeamMember } from '@syncdoc/shared';
 import "./DashboardPage.css";
 import Sidebar from '../components/Sidebar.jsx';
+import { TeamMembersPanel } from '../components/TeamMembersPanel.js';
+import { getSharedSocket } from '../services/socket.js';
 
 interface DashboardPageProps {
   onOpenDocument: (documentId: string) => void;
+  onLogout?: () => void;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, onLogout }) => {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -32,10 +36,68 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   const [importMarkdownText, setImportMarkdownText] = useState('');
   const [importTitle, setImportTitle] = useState('');
 
+  // Team presence state
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loadingTeam, setLoadingTeam] = useState(true);
+
   // User preferences
-  const [userName, setUserName] = useState(() => localStorage.getItem('syncdoc_user_name') || 'Alex Chen');
+  const [userName, setUserName] = useState(() => localStorage.getItem('syncdoc_user_name') || 'Kavin');
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userName);
+
+  // Load team members and synchronize real-time presence via Socket.IO
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchTeam = async () => {
+      setLoadingTeam(true);
+      try {
+        const list = await ApiService.getTeamMembers();
+        if (isMounted) setTeamMembers(list);
+      } catch (err) {
+        console.warn('Unable to fetch team members via REST:', err);
+      } finally {
+        if (isMounted) setLoadingTeam(false);
+      }
+    };
+
+    fetchTeam();
+
+    const socket = getSharedSocket();
+    const normalizedName = userName.trim() || 'Kavin';
+    const userId =
+      localStorage.getItem('syncdoc_user_id') ||
+      `user_${normalizedName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+    const registerUser = () => {
+      socket.emit('register-presence', {
+        userId,
+        userName: normalizedName,
+        userColor: '#3b82f6',
+      });
+    };
+
+    if (socket.connected) {
+      registerUser();
+    } else {
+      socket.on('connect', registerUser);
+    }
+
+    const handlePresenceSync = (data: { members: TeamMember[]; onlineCount: number }) => {
+      if (isMounted && data && Array.isArray(data.members)) {
+        setTeamMembers(data.members);
+      }
+    };
+
+    socket.on('team-presence-sync', handlePresenceSync);
+    socket.emit('request-team-presence');
+
+    return () => {
+      isMounted = false;
+      socket.off('connect', registerUser);
+      socket.off('team-presence-sync', handlePresenceSync);
+    };
+  }, [userName]);
 
   const fetchDocuments = async (retries = 2) => {
     setLoading(true);
@@ -170,10 +232,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
   };
 
   const handleSaveUserName = () => {
-    const trimmed = tempName.trim() || 'Alex Chen';
+    const trimmed = tempName.trim() || 'Kavin';
     setUserName(trimmed);
     localStorage.setItem('syncdoc_user_name', trimmed);
+    sessionStorage.setItem('syncdoc_user_name', trimmed);
     setIsEditingName(false);
+
+    const socket = getSharedSocket();
+    const userId =
+      localStorage.getItem('syncdoc_user_id') ||
+      `user_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    socket.emit('register-presence', {
+      userId,
+      userName: trimmed,
+      userColor: '#3b82f6',
+    });
   };
 
   return (
@@ -237,6 +310,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
                 )}
               </div>
 
+              {/* Logout Button */}
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="dashboard-logout-btn"
+                  title="Sign out of SyncDoc workspace"
+                >
+                  <LogOut size={13} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              )}
+
               {/* Primary New Document CTA */}
               <button
                 onClick={() => handleCreateFromTemplate('blank')}
@@ -251,6 +336,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
 
         {/* Main Body */}
         <main className="dashboard-main-container">
+          <div className="dashboard-layout-row">
+            {/* Left / Center Column: Workspace Hero & Document Catalog */}
+            <div className="dashboard-layout-main">
           {/* Workspace Hero */}
           <section className="dashboard-hero-section">
             <div className="dashboard-hero-header">
@@ -495,8 +583,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument }) 
               </div>
             )}
           </section>
-        </main>
+        </div>
+
+        {/* Right Column: TEAM MEMBERS PANEL */}
+        <TeamMembersPanel
+          currentUserName={userName}
+          members={teamMembers}
+          loading={loadingTeam}
+        />
       </div>
+    </main>
+  </div>
 
       {/* Markdown Import Modal */}
       {isImportModalOpen && (

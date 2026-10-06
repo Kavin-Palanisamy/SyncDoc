@@ -30,4 +30,8 @@ router.post('/documents/:id/import', DocumentController.importMarkdown);
 router.post('/conflict/merge', DocumentController.mergeConflict);
 router.post('/documents/:id/merge', DocumentController.mergeConflict);
 
+// Team Members presence
+router.get('/members', DocumentController.getTeamMembers);
+router.get('/team/members', DocumentController.getTeamMembers);
+
 export default router;

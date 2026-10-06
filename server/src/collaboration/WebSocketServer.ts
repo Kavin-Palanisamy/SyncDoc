@@ -1,5 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import * as Y from 'yjs';
+import mongoose from 'mongoose';
 import {
   UserPresence,
   BlockLockState,
@@ -7,9 +8,11 @@ import {
   DocumentNode,
   countNodes,
   cloneAST,
+  TeamMember,
 } from '@syncdoc/shared';
 import { DocumentModel, validateASTTree } from '../models/Document.js';
 import { DocumentVersionModel } from '../models/DocumentVersion.js';
+import { TeamMemberModel, DEFAULT_TEAM_MEMBERS } from '../models/TeamMember.js';
 import { ConflictResolutionEngine } from '../conflict/ConflictResolutionEngine.js';
 import { ASTCollaborationBridge } from './ASTCollaborationBridge.js';
 
@@ -29,6 +32,11 @@ export class WebSocketCollaborationServer {
   private io: SocketIOServer;
   private sessions: Map<string, DocumentSession> = new Map();
   private sessionInitPromises: Map<string, Promise<DocumentSession>> = new Map();
+  private globalUsers: Map<string, { socketId: string; userId: string; userName: string; userColor: string; currentDocId: string | null }> = new Map();
+  private static cachedMembers: Map<string, { userId: string; userName: string; userColor: string; role: string; lastSeen?: Date }> = new Map(
+    DEFAULT_TEAM_MEMBERS.map((m) => [m.userName.toLowerCase(), { ...m, lastSeen: new Date() }])
+  );
+  private static isDbLoaded = false;
 
   public static getInstance(): WebSocketCollaborationServer | null {
     return WebSocketCollaborationServer.instance;
@@ -45,6 +53,48 @@ export class WebSocketCollaborationServer {
       let currentDocId: string | null = null;
       let currentUser: UserPresence | null = null;
 
+      // Global User Presence Registration (for Dashboard & Editor)
+      socket.on('register-presence', async (data: { userId?: string; userName?: string; userColor?: string }) => {
+        if (!data || !data.userName) return;
+        const normalizedName = data.userName.trim();
+        if (!normalizedName) return;
+        const userId = data.userId || `user_${normalizedName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        const userColor = data.userColor || '#3b82f6';
+
+        this.globalUsers.set(socket.id, {
+          socketId: socket.id,
+          userId,
+          userName: normalizedName,
+          userColor,
+          currentDocId,
+        });
+
+        WebSocketCollaborationServer.cachedMembers.set(normalizedName.toLowerCase(), {
+          userId,
+          userName: normalizedName,
+          userColor,
+          role: 'Member',
+          lastSeen: new Date(),
+        });
+
+        if (mongoose.connection.readyState === 1) {
+          TeamMemberModel.findOneAndUpdate(
+            { userName: normalizedName },
+            { userId, userName: normalizedName, userColor, lastSeen: new Date() },
+            { upsert: true, new: true }
+          ).catch(() => {});
+        }
+
+        this.broadcastTeamPresence();
+      });
+
+      // Request immediate team presence sync
+      socket.on('request-team-presence', async () => {
+        const members = await WebSocketCollaborationServer.getTeamMembersList();
+        const onlineCount = members.filter((m) => m.isOnline).length;
+        socket.emit('team-presence-sync', { members, onlineCount });
+      });
+
       // Join Document Room
       socket.on('join-document', async (data: { documentId: string; user: Omit<UserPresence, 'lastActive'> }) => {
         if (!data || typeof data !== 'object' || !data.documentId) {
@@ -57,6 +107,16 @@ export class WebSocketCollaborationServer {
         const roomName = `doc:${documentId}`;
 
         socket.join(roomName);
+
+        // Record in global connected users
+        this.globalUsers.set(socket.id, {
+          socketId: socket.id,
+          userId: user.userId,
+          userName: user.userName,
+          userColor: user.userColor,
+          currentDocId: documentId,
+        });
+        this.broadcastTeamPresence();
 
         const session = await this.getOrCreateSession(documentId);
 
@@ -336,8 +396,22 @@ export class WebSocketCollaborationServer {
         }
       };
 
-      socket.on('leave-document', handleDisconnect);
-      socket.on('disconnect', handleDisconnect);
+      socket.on('leave-document', () => {
+        handleDisconnect();
+        if (this.globalUsers.has(socket.id)) {
+          const entry = this.globalUsers.get(socket.id);
+          if (entry) entry.currentDocId = null;
+          this.broadcastTeamPresence();
+        }
+      });
+
+      socket.on('disconnect', () => {
+        handleDisconnect();
+        if (this.globalUsers.has(socket.id)) {
+          this.globalUsers.delete(socket.id);
+          this.broadcastTeamPresence();
+        }
+      });
     });
   }
 
@@ -657,6 +731,83 @@ export class WebSocketCollaborationServer {
   }
 
   /**
+   * Broadcasts real-time team presence to all connected sockets
+   */
+  public async broadcastTeamPresence(): Promise<void> {
+    try {
+      const members = await WebSocketCollaborationServer.getTeamMembersList();
+      const onlineCount = members.filter((m) => m.isOnline).length;
+      this.io.emit('team-presence-sync', { members, onlineCount });
+    } catch (err) {
+      console.error('[WebSocket] Error broadcasting team presence:', err);
+    }
+  }
+
+  /**
+   * Returns current team member roster with calculated online status
+   */
+  public static async getTeamMembersList(): Promise<TeamMember[]> {
+    const instance = WebSocketCollaborationServer.instance;
+    const onlineSocketUsers = instance ? Array.from(instance.globalUsers.values()) : [];
+
+    // Lazy load from DB once if available
+    if (!WebSocketCollaborationServer.isDbLoaded && mongoose.connection.readyState === 1) {
+      try {
+        const count = await TeamMemberModel.countDocuments();
+        if (count === 0) {
+          await TeamMemberModel.insertMany(DEFAULT_TEAM_MEMBERS);
+        }
+        const docs = await TeamMemberModel.find().lean();
+        for (const d of docs) {
+          WebSocketCollaborationServer.cachedMembers.set(d.userName.toLowerCase(), {
+            userId: d.userId,
+            userName: d.userName,
+            userColor: d.userColor || '#3b82f6',
+            role: d.role || 'Member',
+            lastSeen: d.lastSeen,
+          });
+        }
+        WebSocketCollaborationServer.isDbLoaded = true;
+      } catch {
+        // Fallback to in-memory cachedMembers
+      }
+    }
+
+    const onlineUserIds = new Set(onlineSocketUsers.map((u) => u.userId.toLowerCase()));
+    const onlineUserNames = new Set(onlineSocketUsers.map((u) => u.userName.toLowerCase()));
+
+    const members: TeamMember[] = Array.from(WebSocketCollaborationServer.cachedMembers.values()).map((m) => {
+      const isOnline = onlineUserIds.has(m.userId.toLowerCase()) || onlineUserNames.has(m.userName.toLowerCase());
+      const activeSession = onlineSocketUsers.find(
+        (u) =>
+          u.userId.toLowerCase() === m.userId.toLowerCase() ||
+          u.userName.toLowerCase() === m.userName.toLowerCase()
+      );
+
+      return {
+        userId: m.userId,
+        userName: m.userName,
+        userColor: m.userColor,
+        role: m.role,
+        isOnline,
+        currentDocId: activeSession?.currentDocId || null,
+        lastActive: m.lastSeen ? new Date(m.lastSeen).getTime() : undefined,
+      };
+    });
+
+    // Sort: Online first (Kavin on top if online), then alphabetically
+    members.sort((a, b) => {
+      if (a.isOnline && !b.isOnline) return -1;
+      if (!a.isOnline && b.isOnline) return 1;
+      if (a.userName.toLowerCase() === 'kavin') return -1;
+      if (b.userName.toLowerCase() === 'kavin') return 1;
+      return a.userName.localeCompare(b.userName);
+    });
+
+    return members;
+  }
+
+  /**
    * Completely destroys all document sessions, clears all timers, and frees Y.Docs
    */
   public destroy(): void {
@@ -671,6 +822,7 @@ export class WebSocketCollaborationServer {
       session.doc.destroy();
     }
     this.sessions.clear();
+    this.globalUsers.clear();
   }
 
   public getSession(documentId: string): DocumentSession | undefined {

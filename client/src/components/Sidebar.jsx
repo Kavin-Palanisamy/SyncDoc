@@ -128,8 +128,9 @@ export default function Sidebar({
               <Settings size={15} />
               <span>Settings</span>
             </button>
-            <div className="sidebar-workspace-wrapper">
-  {isWorkspaceOpen && (
+            
+      <div className="sidebar-workspace-wrapper">
+       {isWorkspaceOpen && (
     <div className="sidebar-workspace-menu">
       <button type="button" className="sidebar-workspace-menu-item">
         <User size={15} />

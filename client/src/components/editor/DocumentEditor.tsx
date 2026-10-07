@@ -355,6 +355,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
               <h1 className="text-3xl font-extrabold text-slate-900 border-b border-slate-200 pb-3 mb-6">
                 {title}
               </h1>
+              
               {nodes.map((n) => {
                 if (n.type === 'heading') {
                   const h = n as { level?: number; content?: string };

@@ -598,7 +598,7 @@ body {
 }
 
 /* Segmented View Switcher (Editor | AST Tree | Markdown | HTML) */
-.editor-segmented-control {
+/* .editor-segmented-control {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -607,9 +607,9 @@ body {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
-}
+} */
 
-.editor-segmented-item {
+/* .editor-segmented-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -625,34 +625,17 @@ body {
   user-select: none;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
-}
+} */
 
-.editor-segmented-item:hover:not(.is-active) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.editor-segmented-item.is-active {
-  color: #ffffff;
-  font-weight: 600;
-  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
-  border-color: #3b82f6;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 12px rgba(59, 130, 246, 0.25);
-}
-
-.editor-segmented-item:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
-}
-
+/* qui
 /* Quick Insert Buttons Toolbar in Secondary Ribbon & Bottom Append */
-.editor-quick-insert-bar {
+/* .editor-quick-insert-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-}
+} */
 
-.btn-insert-chip {
+/* .btn-insert-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -670,9 +653,9 @@ body {
   outline: none;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
+} */
 
-.btn-insert-chip:hover {
+/* .btn-insert-chip:hover {
   color: #ffffff;
   background: #192237;
   border-color: rgba(255, 255, 255, 0.2);
@@ -700,10 +683,10 @@ body {
 
 .btn-insert-chip:hover .insert-chip-icon {
   opacity: 1;
-}
+} */
 
 /* Save / Sync Status Pill */
-.editor-sync-pill {
+/* .editor-sync-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -743,53 +726,9 @@ body {
 .editor-sync-pill.is-saved:hover {
   border-color: rgba(52, 211, 153, 0.45);
   background: rgba(6, 78, 59, 0.4);
-}
+} */
 
-/* Gutter Contextual Action Controls */
-.gutter-control-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  color: #94a3b8;
-  background: #0e1526;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.15s ease;
-  outline: none;
-}
 
-.gutter-control-btn:hover:not(:disabled) {
-  color: #ffffff;
-  background: #1e293b;
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.gutter-control-btn:active:not(:disabled) {
-  background: #0b101c;
-  transform: scale(0.95);
-}
-
-.gutter-control-btn:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
-}
-
-.gutter-control-btn:disabled {
-  opacity: 0.25;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.gutter-control-btn.is-delete:hover:not(:disabled) {
-  color: #fb7185;
-  background: rgba(244, 63, 94, 0.18);
-  border-color: rgba(244, 63, 94, 0.35);
-}
 
 /* Code Block Controls (Language Selector & IDE Copy Button) */
 .codeblock-lang-select {
@@ -886,7 +825,7 @@ body {
 }
 
 /* Bottom Append Bar */
-.editor-bottom-bar {
+/* .editor-bottom-bar {
   margin-top: 40px;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -895,7 +834,7 @@ body {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-}
+} */
 
 /* Editor Empty State */
 .editor-empty-state {
@@ -924,28 +863,15 @@ body {
   -webkit-backdrop-filter: blur(16px);
 }
 
-.preview-panel-header {
+/* .preview-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 16px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border-subtle);
-}
+} */
 
-.preview-code-box {
-  background: #090d16;
-  color: #34d399;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  line-height: 1.7;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  max-height: 600px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-}
 
 .preview-html-canvas {
   background: #ffffff;

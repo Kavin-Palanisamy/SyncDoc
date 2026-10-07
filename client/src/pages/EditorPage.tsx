@@ -3,7 +3,7 @@ import { ApiService, DocumentSummary } from '../services/api.js';
 import { CollaborationProvider } from '../context/CollaborationContext.js';
 import { DocumentEditor } from '../components/editor/DocumentEditor.js';
 import { Zap, AlertCircle } from 'lucide-react';
-
+import "./EditorPage.css";
 interface EditorPageProps {
   documentId: string;
   onBackToDashboard: () => void;

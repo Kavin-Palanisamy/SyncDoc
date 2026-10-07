@@ -66,12 +66,13 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     }
   };
 
-  return (
-    <header className="sticky top-0 z-40 bg-[#090d16]/90 backdrop-blur-xl border-b border-white/[0.08] shadow-sm select-none">
+    return (
+    <header className="editor-toolbar-header sticky top-0 z-40 border-b border-white/[0.08] select-none">
+      
       {/* Top Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+            <div className="editor-toolbar-row">
         {/* Left: Back button & Document Title */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="toolbar-group toolbar-group--left">
           <button
             onClick={onBackToDashboard}
             className="btn-editor-secondary"
@@ -85,14 +86,14 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
           {/* Title Inline Editor */}
           {isEditingTitle ? (
-            <input
+           <input
               type="text"
               autoFocus
               value={localTitle}
               onChange={(e) => setLocalTitle(e.target.value)}
               onBlur={handleTitleSubmit}
               onKeyDown={(e) => e.key === 'Enter' && handleTitleSubmit()}
-              className="bg-slate-900 text-white font-bold text-sm px-2.5 py-1 rounded-lg border border-blue-500 outline-none w-56 sm:w-72 shadow-inner"
+              className="toolbar-title-input"
             />
           ) : (
             <div
@@ -100,21 +101,21 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 setLocalTitle(title);
                 setIsEditingTitle(true);
               }}
-              className="flex items-center gap-1.5 group cursor-pointer py-1 px-1.5 rounded-lg hover:bg-white/[0.05] transition-colors min-w-0"
+              className="toolbar-title-wrap group"
               title="Click to rename document"
             >
-              <h1 className="font-bold text-sm sm:text-base text-slate-100 group-hover:text-blue-400 truncate max-w-[140px] sm:max-w-xs transition-colors">
+              <h1 className="toolbar-title-text group-hover:text-blue-400">
                 {title}
               </h1>
               <Edit2 size={12} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
           )}
 
-          <ConflictIndicator version={version} />
+         <ConflictIndicator version={version} />
         </div>
-
+        <div className="toolbar-divider" />
         {/* Center: Segmented View Switcher */}
-        <div className="hidden lg:flex editor-segmented-control" role="tablist" aria-label="View switcher">
+        <div className="toolbar-group toolbar-group--center hidden lg:flex editor-segmented-control" role="tablist" aria-label="View switcher">
           <button
             onClick={() => onViewModeChange('editor')}
             className={`editor-segmented-item ${viewMode === 'editor' ? 'is-active' : ''}`}
@@ -153,64 +154,93 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           </button>
         </div>
 
-        {/* Right: Presence, Undo/Redo, History & Export */}
-        <div className="flex items-center gap-2">
-          <CollaboratorList
-            collaborators={collaborators}
-            currentUser={currentUser}
-            connectionStatus={connectionStatus}
-          />
+                <div className="toolbar-divider" />
 
-          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+        {/* Right: Presence, Undo/Redo, History, Export & Save status */}
+        <div className="toolbar-group toolbar-group--right">
+          <div className="toolbar-right-top">
+            <CollaboratorList
+              collaborators={collaborators}
+              currentUser={currentUser}
+              connectionStatus={connectionStatus}
+            />
 
-          {/* Undo / Redo Group */}
-          <div className="hidden sm:inline-flex btn-editor-group" aria-label="History undo and redo">
+            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+            {/* Undo / Redo Group */}
+            <div className="hidden sm:inline-flex btn-editor-group" aria-label="History undo and redo">
+              <button
+                disabled={!canUndo}
+                onClick={undo}
+                className="btn-editor-icon"
+                title="Undo (Ctrl+Z)"
+                aria-label="Undo"
+              >
+                <Undo size={14} />
+              </button>
+              <div className="btn-editor-group-divider" />
+              <button
+                disabled={!canRedo}
+                onClick={redo}
+                className="btn-editor-icon"
+                title="Redo (Ctrl+Y)"
+                aria-label="Redo"
+              >
+                <Redo size={14} />
+              </button>
+            </div>
+
+            {/* Version History Button */}
             <button
-              disabled={!canUndo}
-              onClick={undo}
-              className="btn-editor-icon"
-              title="Undo (Ctrl+Z)"
-              aria-label="Undo"
+              onClick={onOpenHistory}
+              className="btn-editor-secondary shrink-0"
+              title="Inspect version history & rollback snapshots"
             >
-              <Undo size={14} />
+              <History size={14} className="text-slate-400" />
+              <span className="hidden md:inline">History</span>
             </button>
-            <div className="btn-editor-group-divider" />
+
+            {/* Export Button (Primary Action) */}
             <button
-              disabled={!canRedo}
-              onClick={redo}
-              className="btn-editor-icon"
-              title="Redo (Ctrl+Y)"
-              aria-label="Redo"
+              onClick={onOpenExport}
+              className="btn-editor-primary shrink-0"
+              title="Export Document as HTML, PDF, Markdown, or JSON"
             >
-              <Redo size={14} />
+              <Download size={14} />
+              <span>Export</span>
             </button>
           </div>
 
-          {/* Version History Button */}
-          <button
-            onClick={onOpenHistory}
-            className="btn-editor-secondary shrink-0"
-            title="Inspect version history & rollback snapshots"
-          >
-            <History size={14} className="text-slate-400" />
-            <span className="hidden md:inline">History</span>
-          </button>
-
-          {/* Export Button (Primary Action) */}
-          <button
-            onClick={onOpenExport}
-            className="btn-editor-primary shrink-0"
-            title="Export Document as HTML, PDF, Markdown, or JSON"
-          >
-            <Download size={14} />
-            <span>Export</span>
-          </button>
+          {/* Save Status / Live Sync Pill */}
+          <div className="toolbar-right-bottom">
+            {isSaving ? (
+              <span className="editor-sync-pill is-saving" title="Saving changes...">
+                <Save size={11} className="animate-spin text-amber-400" />
+                <span>Saving...</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={triggerSave}
+                className="editor-sync-pill is-saved"
+                title="Click to manually save version snapshot"
+              >
+                <CheckCircle2 size={11} className="text-emerald-400" />
+                <span>
+                  {lastSavedAt
+                    ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'All changes saved'}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Secondary Ribbon: Quick Block Insert Chips & Save Status */}
-      <div className="bg-[#0b0f19]/80 border-t border-white/[0.04] px-4 sm:px-6 h-9 flex items-center justify-between text-xs overflow-x-auto">
-        {/* Quick Insert Actions */}
+            {/* Secondary Ribbon: Quick Block Insert Chips */}
+      {/* <div className="bg-[#0b0f19]/80 border-t border-white/[0.04] px-4 sm:px-6 h-9 flex items-center text-xs overflow-x-auto"> */}
+        
+        {/* Quick Insert Actions
         <div className="editor-quick-insert-bar">
           <span className="text-slate-500 text-[10.5px] font-semibold tracking-wider uppercase mr-1 hidden sm:inline">
             Insert
@@ -263,32 +293,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             <Minus size={12} className="insert-chip-icon text-slate-400" />
             <span>Divider</span>
           </button>
-        </div>
-
-        {/* Save Status / Live Sync Pill */}
-        <div className="flex items-center gap-2 shrink-0 pl-2">
-          {isSaving ? (
-            <span className="editor-sync-pill is-saving" title="Saving changes...">
-              <Save size={11} className="animate-spin text-amber-400" />
-              <span>Saving...</span>
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={triggerSave}
-              className="editor-sync-pill is-saved"
-              title="Click to manually save version snapshot"
-            >
-              <CheckCircle2 size={11} className="text-emerald-400" />
-              <span>
-                {lastSavedAt
-                  ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  : 'All changes saved'}
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
+         </div>
+      </div> */}
     </header>
   );
 };

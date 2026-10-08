@@ -6,6 +6,7 @@ import {
   Clock,
   Trash2,
   Upload,
+  X,
   Layers,
   BookOpen,
   Code,
@@ -611,9 +612,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
               </div>
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded"
+                className="dashboard-modal-close"
+                aria-label="Close modal"
               >
-                &times;
+               <X size={18} strokeWidth={2} />
               </button>
             </div>
 

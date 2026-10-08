@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Layers, Plus, FileText, Settings, User, Menu, X, Sparkles } from "lucide-react";
+import { Layers, Plus, FileText, Settings, User,LogOut, Menu, X, Sparkles } from "lucide-react";
+
 import "./Sidebar.css";
 
 /**
@@ -25,6 +26,7 @@ export default function Sidebar({
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [docFilter, setDocFilter] = useState("");
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
 
   const filteredDocs = docFilter.trim()
     ? documents.filter((d) => d.title.toLowerCase().includes(docFilter.toLowerCase()))
@@ -126,10 +128,34 @@ export default function Sidebar({
               <Settings size={15} />
               <span>Settings</span>
             </button>
-            <button type="button" className="sidebar-bottom-item" title="Active Profile">
-              <User size={15} />
-              <span>Workspace</span>
-            </button>
+            
+      <div className="sidebar-workspace-wrapper">
+       {isWorkspaceOpen && (
+    <div className="sidebar-workspace-menu">
+      <button type="button" className="sidebar-workspace-menu-item">
+        <User size={15} />
+        <span>Your Profile</span>
+      </button>
+
+      <button type="button" className="sidebar-workspace-menu-item">
+        <LogOut size={15} />
+        <span>Logout</span>
+      </button>
+    </div>
+  )}
+
+  <button
+    type="button"
+    className={`sidebar-bottom-item ${
+      isWorkspaceOpen ? "workspace-active" : ""
+    }`}
+    title="Active Profile"
+    onClick={() => setIsWorkspaceOpen((prev) => !prev)}
+  >
+    <User size={15} />
+    <span>Workspace</span>
+  </button>
+</div>
           </div>
         </div>
       </aside>

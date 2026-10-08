@@ -125,7 +125,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
       />
 
       {/* Main Workspace Canvas */}
-      <main className="flex-1 w-full max-w-[840px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="editor-main-canvas flex-1 w-full max-w-[840px] mx-auto px-4 sm:px-6">
         {viewMode === 'editor' && (
           <div className="editor-document-canvas">
             {/* Document Header & Title Area */}
@@ -139,15 +139,15 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
                   onBlur={handleCanvasTitleSubmit}
                   onKeyDown={(e) => e.key === 'Enter' && handleCanvasTitleSubmit()}
                   className="document-title-input"
-                  placeholder="Untitled Document"
+                  placeholder="Editor"
                 />
               ) : (
-                <div
+                                <div
                   onClick={() => {
                     setCanvasTitleText(title);
                     setIsEditingCanvasTitle(true);
                   }}
-                  className="group/title flex items-baseline gap-2 cursor-pointer rounded-lg -ml-2 p-2 hover:bg-white/[0.03] transition-colors"
+                  className="document-title-row group/title"
                   title="Click to rename document"
                 >
                   <h1 className="document-main-title">
@@ -155,32 +155,30 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
                   </h1>
                   <Edit3
                     size={15}
-                    className="text-slate-500 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mb-1"
+                    className="document-title-edit-icon opacity-0 group-hover/title:opacity-100"
                   />
                 </div>
               )}
 
               {/* Document Metadata Ribbon */}
+                            {/* Document Metadata Ribbon */}
               <div className="document-metadata-row">
-                <span className="doc-meta-item">
-                  <Clock size={12} className="text-slate-400" />
+                <span className="doc-meta-pill">
+                  <Clock size={12} />
                   <span>
-                    {lastSavedAt
-                      ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                 {lastSavedAt
+                   ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                       : 'All changes saved'}
                   </span>
                 </span>
-                <span className="doc-meta-separator">•</span>
-                <span className="doc-meta-item font-mono">
-                  <Layers size={12} className="text-cyan-400" />
+                <span className="doc-meta-pill doc-meta-pill--cyan font-mono">
+                  <Layers size={12} />
                   <span>{nodes.length} {nodes.length === 1 ? 'block' : 'blocks'}</span>
                 </span>
-                <span className="doc-meta-separator">•</span>
-                <span className="doc-meta-item font-mono text-blue-400">
+                <span className="doc-meta-pill doc-meta-pill--blue font-mono">
                   <span>v{version}</span>
                 </span>
-                <span className="doc-meta-separator">•</span>
-                <span className="doc-meta-item text-emerald-400">
+                <span className="doc-meta-pill doc-meta-pill--emerald">
                   <Sparkles size={12} />
                   <span>CRDT Synced</span>
                 </span>
@@ -220,59 +218,73 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
               </div>
             )}
 
-            {/* Bottom Add Block Bar */}
-            <div className="editor-bottom-bar">
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold">
-                <Plus size={13} className="text-blue-400" />
-                <span>Add Block:</span>
+                        {/* Bottom Add Block Bar */}
+            <div className="add-block-bar">
+              <div className="add-block-label">
+                <span className="add-block-label-icon">
+                  <Plus size={13} />
+                </span>
+                <span>Add Block</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="add-block-chip-row">
                 <button
                   onClick={() => insertBlock('paragraph', nodes.length)}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add Paragraph Block"
                 >
-                  <Type size={12} className="insert-chip-icon text-slate-300" />
+                  <span className="add-block-chip-icon add-block-chip-icon--slate">
+                    <Type size={13} />
+                  </span>
                   <span>Paragraph</span>
                 </button>
                 <button
                   onClick={() => insertBlock('heading', nodes.length, { level: 2 })}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add Heading Block"
                 >
-                  <HeadingIcon size={12} className="insert-chip-icon text-purple-400" />
+                  <span className="add-block-chip-icon add-block-chip-icon--purple">
+                    <HeadingIcon size={13} />
+                  </span>
                   <span>Heading</span>
                 </button>
                 <button
                   onClick={() => insertBlock('code_block', nodes.length)}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add Code Block"
                 >
-                  <Code2 size={12} className="insert-chip-icon text-amber-400" />
+                  <span className="add-block-chip-icon add-block-chip-icon--amber">
+                    <Code2 size={13} />
+                  </span>
                   <span>Code</span>
                 </button>
                 <button
                   onClick={() => insertBlock('list', nodes.length)}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add List Block"
                 >
-                  <List size={12} className="insert-chip-icon text-cyan-400" />
+                  <span className="add-block-chip-icon add-block-chip-icon--cyan">
+                    <List size={13} />
+                  </span>
                   <span>List</span>
                 </button>
                 <button
                   onClick={() => insertBlock('blockquote', nodes.length)}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add Quote Block"
                 >
-                  <Quote size={12} className="insert-chip-icon text-pink-400" />
+                  <span className="add-block-chip-icon add-block-chip-icon--pink">
+                    <Quote size={13} />
+                  </span>
                   <span>Quote</span>
                 </button>
                 <button
                   onClick={() => insertBlock('divider', nodes.length)}
-                  className="btn-insert-chip"
+                  className="add-block-chip"
                   title="Add Horizontal Divider Block"
                 >
-                  <Minus size={12} className="insert-chip-icon text-slate-400" />
+                  <span className="add-block-chip-icon add-block-chip-icon--slate">
+                    <Minus size={13} />
+                  </span>
                   <span>Divider</span>
                 </button>
               </div>
@@ -343,6 +355,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ onBackToDashboar
               <h1 className="text-3xl font-extrabold text-slate-900 border-b border-slate-200 pb-3 mb-6">
                 {title}
               </h1>
+              
               {nodes.map((n) => {
                 if (n.type === 'heading') {
                   const h = n as { level?: number; content?: string };

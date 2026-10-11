@@ -11,10 +11,12 @@ import "./Sidebar.css";
 
 /**
  * @typedef {Object} SidebarProps
- * @property {SidebarDocument[]} documents
- * @property {string|null} activeDocumentId
- * @property {(documentId: string) => void} onSelectDocument
- * @property {() => void} onNewDocument
+ * @property {SidebarDocument[]} [documents]
+ * @property {string|null} [activeDocumentId]
+ * @property {(documentId: string) => void} [onSelectDocument]
+ * @property {() => void} [onNewDocument]
+ * @property {() => void} [onOpenSettings]
+ * @property {() => void} [onLogout]
  */
 
 /** @param {SidebarProps} props */
@@ -23,6 +25,8 @@ export default function Sidebar({
   activeDocumentId = null,
   onSelectDocument = () => {},
   onNewDocument = () => {},
+  onOpenSettings = () => {},
+  onLogout = () => {},
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [docFilter, setDocFilter] = useState("");
@@ -119,30 +123,49 @@ export default function Sidebar({
         <div className="sidebar-bottom">
           <div className="sidebar-workspace-pill">
             <span className="sidebar-status-dot" />
-            <span className="sidebar-status-text">CRDT Engine Live</span>
+            <span className="sidebar-status-text">Sync Active</span>
             <Sparkles size={11} className="sidebar-status-sparkle" />
           </div>
 
           <div className="sidebar-footer-nav">
-            <button type="button" className="sidebar-bottom-item" title="Workspace Settings">
+            <button
+              type="button"
+              className="sidebar-bottom-item"
+              title="Workspace Settings"
+              onClick={onOpenSettings}
+            >
               <Settings size={15} />
               <span>Settings</span>
             </button>
             
-      <div className="sidebar-workspace-wrapper">
-       {isWorkspaceOpen && (
-    <div className="sidebar-workspace-menu">
-      <button type="button" className="sidebar-workspace-menu-item">
-        <User size={15} />
-        <span>Your Profile</span>
-      </button>
+            <div className="sidebar-workspace-wrapper">
+              {isWorkspaceOpen && (
+                <div className="sidebar-workspace-menu">
+                  <button
+                    type="button"
+                    className="sidebar-workspace-menu-item"
+                    onClick={() => {
+                      setIsWorkspaceOpen(false);
+                      onOpenSettings();
+                    }}
+                  >
+                    <User size={15} />
+                    <span>Workspace Settings</span>
+                  </button>
 
-      <button type="button" className="sidebar-workspace-menu-item">
-        <LogOut size={15} />
-        <span>Logout</span>
-      </button>
-    </div>
-  )}
+                  <button
+                    type="button"
+                    className="sidebar-workspace-menu-item"
+                    onClick={() => {
+                      setIsWorkspaceOpen(false);
+                      onLogout();
+                    }}
+                  >
+                    <LogOut size={15} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
 
   <button
     type="button"

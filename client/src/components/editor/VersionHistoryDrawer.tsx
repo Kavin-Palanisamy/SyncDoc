@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { History, RotateCcw, X, Clock, User, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  History,
+  RotateCcw,
+  X,
+  Clock,
+  User,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Bookmark,
+} from 'lucide-react';
 import { ApiService, VersionSummary } from '../../services/api.js';
 
 interface VersionHistoryDrawerProps {
@@ -20,6 +30,9 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
   const [versions, setVersions] = useState<VersionSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [rollingBackVersion, setRollingBackVersion] = useState<number | null>(null);
+  const [confirmRollbackTarget, setConfirmRollbackTarget] = useState<number | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
 
   const fetchVersions = async () => {
     setLoading(true);
@@ -36,25 +49,45 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchVersions();
+      setFeedbackMessage(null);
+      setConfirmRollbackTarget(null);
     }
   }, [isOpen, documentId]);
 
   if (!isOpen) return null;
 
-  const handleRollback = async (vNumber: number) => {
-    if (window.confirm(`Are you sure you want to rollback to Version ${vNumber}? Current changes will be archived in a new version snapshot.`)) {
-      setRollingBackVersion(vNumber);
-      try {
-        await onRollback(vNumber);
-        await fetchVersions();
-      } finally {
-        setRollingBackVersion(null);
-      }
+  const handleCreateSnapshot = async () => {
+    setIsCreatingSnapshot(true);
+    try {
+      const author = localStorage.getItem('syncdoc_user_name') || 'You';
+      await ApiService.createVersionSnapshot(documentId, author, 'Manual snapshot saved');
+      await fetchVersions();
+      setFeedbackMessage({ type: 'success', text: 'New version snapshot created successfully!' });
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    } catch (err: any) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Failed to create snapshot' });
+    } finally {
+      setIsCreatingSnapshot(false);
+    }
+  };
+
+  const executeRollback = async (vNumber: number) => {
+    setRollingBackVersion(vNumber);
+    setConfirmRollbackTarget(null);
+    try {
+      await onRollback(vNumber);
+      await fetchVersions();
+      setFeedbackMessage({ type: 'success', text: `Document restored to Version ${vNumber}!` });
+      setTimeout(() => setFeedbackMessage(null), 3500);
+    } catch (err: any) {
+      setFeedbackMessage({ type: 'error', text: err.message || `Rollback to Version ${vNumber} failed.` });
+    } finally {
+      setRollingBackVersion(null);
     }
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-[#0d121f]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col animate-fade-in">
+    <div className="fixed inset-y-0 right-0 w-full sm:w-[440px] bg-[#0d121f]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl z-50 flex flex-col animate-fade-in">
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -76,6 +109,66 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
         </button>
       </div>
 
+      {/* Snapshot Action Bar */}
+      <div className="px-5 py-2.5 bg-black/20 border-b border-white/[0.06] flex items-center justify-between">
+        <span className="text-[11.5px] text-slate-400">
+          Current State: <span className="text-blue-400 font-mono font-bold">v{currentVersion}</span>
+        </span>
+        <button
+          type="button"
+          disabled={isCreatingSnapshot}
+          onClick={handleCreateSnapshot}
+          className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-950/50 border border-blue-800/40 hover:bg-blue-900/50 transition-colors"
+        >
+          <Bookmark size={12} />
+          <span>{isCreatingSnapshot ? 'Saving...' : 'Save Snapshot'}</span>
+        </button>
+      </div>
+
+      {/* Feedback Banner */}
+      {feedbackMessage && (
+        <div
+          className={`px-4 py-2.5 text-xs flex items-center gap-2 border-b ${
+            feedbackMessage.type === 'success'
+              ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/40'
+              : 'bg-rose-950/60 text-rose-300 border-rose-800/40'
+          }`}
+        >
+          {feedbackMessage.type === 'success' ? (
+            <CheckCircle2 size={13} className="shrink-0" />
+          ) : (
+            <AlertCircle size={13} className="shrink-0" />
+          )}
+          <span>{feedbackMessage.text}</span>
+        </div>
+      )}
+
+      {/* Confirmation Modal / Banner for Rollback */}
+      {confirmRollbackTarget !== null && (
+        <div className="p-4 bg-amber-950/40 border-b border-amber-800/50 text-xs">
+          <p className="text-amber-200 font-semibold mb-1">
+            Rollback to Version {confirmRollbackTarget}?
+          </p>
+          <p className="text-amber-300/80 text-[11.5px] mb-3">
+            Your document content will be reverted to this snapshot. A new snapshot will be created preserving current edits.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => executeRollback(confirmRollbackTarget)}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold rounded text-xs transition-colors"
+            >
+              Confirm Rollback
+            </button>
+            <button
+              onClick={() => setConfirmRollbackTarget(null)}
+              className="px-3 py-1 bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 rounded text-xs transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Version Timeline List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {loading ? (
@@ -84,7 +177,7 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
           </div>
         ) : versions.length === 0 ? (
           <div className="text-center py-12 text-slate-500 text-xs">
-            No recorded snapshots yet. Edit and save to generate versions.
+            No snapshots recorded yet. Use &quot;Save Snapshot&quot; above to capture version checkpoints.
           </div>
         ) : (
           versions.map((v) => {
@@ -113,7 +206,7 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
                   {!isCurrent && (
                     <button
                       disabled={rollingBackVersion === v.versionNumber}
-                      onClick={() => handleRollback(v.versionNumber)}
+                      onClick={() => setConfirmRollbackTarget(v.versionNumber)}
                       className="btn-editor-secondary h-6 px-2 text-[11px] text-cyan-400 border-cyan-800/40 hover:bg-cyan-950/40"
                       title={`Rollback to version ${v.versionNumber}`}
                       aria-label={`Rollback to version ${v.versionNumber}`}
@@ -133,7 +226,8 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
                     <User size={10} /> {v.author}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock size={10} /> {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <Clock size={10} />{' '}
+                    {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <span className="flex items-center gap-1">
                     <FileText size={10} /> {v.nodeCount} blocks

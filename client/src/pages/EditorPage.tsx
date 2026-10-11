@@ -51,8 +51,8 @@ export const EditorPage: React.FC<EditorPageProps> = ({
         <p className="text-slate-300 font-semibold text-sm mb-1">
           Connecting to document session...
         </p>
-        <p className="text-slate-500 text-xs font-mono">
-          Initializing Yjs CRDT synchronization & AST validation
+        <p className="text-slate-500 text-xs">
+          Preparing document workspace & active collaborators
         </p>
       </div>
     );

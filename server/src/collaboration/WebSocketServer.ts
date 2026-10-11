@@ -795,12 +795,10 @@ export class WebSocketCollaborationServer {
       };
     });
 
-    // Sort: Online first (Kavin on top if online), then alphabetically
+    // Sort: Online members first, then alphabetically by username
     members.sort((a, b) => {
       if (a.isOnline && !b.isOnline) return -1;
       if (!a.isOnline && b.isOnline) return 1;
-      if (a.userName.toLowerCase() === 'kavin') return -1;
-      if (b.userName.toLowerCase() === 'kavin') return 1;
       return a.userName.localeCompare(b.userName);
     });
 

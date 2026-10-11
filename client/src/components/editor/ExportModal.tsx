@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Download, X, FileCode, Printer, FileText, Code2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Download, X, FileCode, Printer, FileText, Code2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { ApiService } from '../../services/api.js';
+import './ExportModal.css';
 
 interface ExportModalProps {
   documentId: string;
@@ -9,37 +11,120 @@ interface ExportModalProps {
   onClose: () => void;
 }
 
+type ExportFormat = 'markdown' | 'html' | 'json' | 'pdf';
+
+interface FormatOption {
+  id: ExportFormat;
+  title: string;
+  extension: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
 export const ExportModal: React.FC<ExportModalProps> = ({
   documentId,
   title,
   isOpen,
   onClose,
 }) => {
-  const [format, setFormat] = useState<'html' | 'pdf' | 'markdown' | 'json'>('html');
+  const [format, setFormat] = useState<ExportFormat>('markdown');
   const [downloading, setDownloading] = useState(false);
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Close on Escape key press
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !downloading) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, downloading, onClose]);
+
+  // Clean status when modal reopens
+  useEffect(() => {
+    if (isOpen) {
+      setExportStatus(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const sanitizedBaseName = (title || 'untitled_document')
+    .trim()
+    .replace(/[^a-zA-Z0-9_\-\s]/g, '')
+    .replace(/\s+/g, '_') || 'document';
+
+  const previewFilename = `${sanitizedBaseName}.${format === 'pdf' ? 'print.html' : format === 'json' ? 'json' : format === 'markdown' ? 'md' : 'html'}`;
+
+  const formatOptions: FormatOption[] = [
+    {
+      id: 'markdown',
+      title: 'Markdown',
+      extension: '.md',
+      description: 'Standard GitHub Flavored Markdown document for docs and READMEs.',
+      icon: <FileText size={16} className="text-emerald-400" />,
+    },
+    {
+      id: 'html',
+      title: 'Sanitized HTML',
+      extension: '.html',
+      description: 'Production-ready web layout sanitized via DOMPurify XSS protections.',
+      icon: <FileCode size={16} className="text-blue-400" />,
+    },
+    {
+      id: 'json',
+      title: 'JSON / AST Tree',
+      extension: '.json',
+      description: 'Full Abstract Syntax Tree representation with node IDs and attributes.',
+      icon: <Code2 size={16} className="text-purple-400" />,
+    },
+    {
+      id: 'pdf',
+      title: 'Print / PDF Layout',
+      extension: '.html',
+      description: 'Self-contained styled document ready for browser print or Save as PDF.',
+      icon: <Printer size={16} className="text-cyan-400" />,
+    },
+  ];
+
   const handleDownload = async () => {
+    if (downloading) return;
     setDownloading(true);
+    setExportStatus(null);
+
     try {
       const { blob, filename } = await ApiService.exportDocument(documentId, format);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename;
+      a.download = filename || previewFilename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err) {
+
+      setExportStatus({
+        type: 'success',
+        text: `Exported "${filename || previewFilename}" successfully!`,
+      });
+      setTimeout(() => setExportStatus(null), 4000);
+    } catch (err: any) {
       console.error('Failed to export:', err);
+      setExportStatus({
+        type: 'error',
+        text: err.message || 'Export generation failed. Please try again.',
+      });
     } finally {
       setDownloading(false);
     }
   };
 
   const handlePrintPreview = async () => {
+    if (downloading) return;
+    setDownloading(true);
     try {
       const { blob } = await ApiService.exportDocument(documentId, 'pdf');
       const text = await blob.text();
@@ -50,142 +135,167 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         printWindow.focus();
         setTimeout(() => printWindow.print(), 500);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to trigger print preview:', err);
+      setExportStatus({
+        type: 'error',
+        text: err.message || 'Failed to open print preview window.',
+      });
+    } finally {
+      setDownloading(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-menu-enter">
+  const modalContent = (
+    <div
+      className="export-modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !downloading) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="export-dialog-title"
+    >
+      <div className="export-modal-dialog">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-950/60 border border-blue-800/40 text-blue-400 flex items-center justify-center">
-              <Download size={16} />
+        <div className="export-modal-header">
+          <div className="export-header-left">
+            <div className="export-header-icon-wrap" aria-hidden="true">
+              <Download size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm">
+              <h2 id="export-dialog-title" className="export-modal-title">
                 Export Document
-              </h3>
-              <p className="text-[11px] text-slate-400 truncate max-w-xs">&quot;{title}&quot;</p>
+              </h2>
+              <p className="export-modal-subtitle" title={title}>
+                &ldquo;{title}&rdquo;
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="btn-editor-icon"
-            title="Close modal"
-            aria-label="Close modal"
+            disabled={downloading}
+            className="export-close-btn"
+            aria-label="Close export dialog"
+            title="Close"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4">
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Choose an export pipeline. HTML and PDF outputs are sanitized through the DOMPurify security pipeline.
+        <div className="export-modal-body">
+          <p className="export-info-text">
+            Select an export pipeline for this document. Markdown and HTML outputs preserve formatted blocks and AST node hierarchy.
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
-            {/* HTML option */}
-            <button
-              onClick={() => setFormat('html')}
-              className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
-                format === 'html'
-                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
-                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
-              }`}
+          {/* Status Message */}
+          {exportStatus && (
+            <div
+              className={`export-status-alert ${exportStatus.type}`}
+              role="alert"
+              aria-live="polite"
             >
-              <div className="flex items-center gap-2 text-blue-400 font-semibold text-xs">
-                <FileCode size={15} /> Sanitized HTML
-              </div>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                Web document with DOMPurify XSS protections.
-              </span>
-            </button>
+              {exportStatus.type === 'success' ? (
+                <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />
+              ) : (
+                <AlertCircle size={16} className="text-rose-400 flex-shrink-0" />
+              )}
+              <span>{exportStatus.text}</span>
+            </div>
+          )}
 
-            {/* PDF / Print option */}
-            <button
-              onClick={() => setFormat('pdf')}
-              className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
-                format === 'pdf'
-                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
-                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-cyan-400 font-semibold text-xs">
-                <Printer size={15} /> Print / PDF Layout
-              </div>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                Self-contained printable layout with custom CSS.
-              </span>
-            </button>
+          {/* Format Radio Cards */}
+          <div
+            className="export-card-grid"
+            role="radiogroup"
+            aria-label="Choose export format"
+          >
+            {formatOptions.map((opt) => {
+              const isSelected = format === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  disabled={downloading}
+                  onClick={() => setFormat(opt.id)}
+                  className={`export-format-card ${isSelected ? 'selected' : ''}`}
+                >
+                  <div className="export-card-top-row">
+                    <div className="export-card-left">
+                      {opt.icon}
+                      <span>{opt.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="export-card-badge">{opt.extension}</span>
+                      <div className="export-radio-dot" aria-hidden="true">
+                        {isSelected && <div className="export-radio-inner-dot" />}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="export-card-desc">{opt.description}</p>
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Markdown option */}
-            <button
-              onClick={() => setFormat('markdown')}
-              className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
-                format === 'markdown'
-                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
-                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs">
-                <FileText size={15} /> Markdown (.md)
-              </div>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                Standard GitHub Flavored Markdown document.
-              </span>
-            </button>
-
-            {/* JSON AST option */}
-            <button
-              onClick={() => setFormat('json')}
-              className={`p-3.5 rounded-xl border text-left flex flex-col gap-1 transition-all ${
-                format === 'json'
-                  ? 'bg-blue-950/40 border-blue-500 shadow-md shadow-blue-950/50'
-                  : 'bg-white/[0.02] border-white/[0.07] hover:border-white/20 hover:bg-white/[0.04]'
-              }`}
-            >
-              <div className="flex items-center gap-2 text-purple-400 font-semibold text-xs">
-                <Code2 size={15} /> Structural AST (.json)
-              </div>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                Full AST tree structure with node IDs.
-              </span>
-            </button>
+          {/* Filename Preview */}
+          <div className="export-filename-box">
+            <span className="export-filename-label">Target File</span>
+            <span className="export-filename-val">{previewFilename}</span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-[#090d16]/80 border-t border-white/[0.08] flex items-center justify-between">
+        <div className="export-modal-footer">
           {format === 'pdf' ? (
             <button
+              type="button"
+              disabled={downloading}
               onClick={handlePrintPreview}
-              className="btn-editor-secondary"
+              className="btn-secondary flex items-center gap-2"
             >
-              <Printer size={13} /> Open Print Preview
+              <Printer size={14} /> Open Print Dialog
             </button>
           ) : (
             <div />
           )}
 
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="btn-editor-secondary">
+          <div className="export-footer-actions">
+            <button
+              type="button"
+              disabled={downloading}
+              onClick={onClose}
+              className="btn-ghost"
+            >
               Cancel
             </button>
             <button
+              type="button"
               disabled={downloading}
               onClick={handleDownload}
-              className="btn-editor-primary"
+              className="btn-primary flex items-center gap-2"
+              aria-busy={downloading}
             >
-              <Download size={13} />
-              {downloading ? 'Compiling...' : `Download ${format.toUpperCase()}`}
+              {downloading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Compiling...</span>
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>Download {format.toUpperCase()}</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ApiService } from "../services/api";
 import "./Login.css";
 
 export default function Signup({ onSwitchToLogin }) {
@@ -11,7 +12,7 @@ export default function Signup({ onSwitchToLogin }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -37,15 +38,30 @@ export default function Signup({ onSwitchToLogin }) {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const res = await ApiService.signup(fullName.trim(), email.trim(), password);
+      if (res && res.token && res.user) {
+        localStorage.setItem('syncdoc_token', res.token);
+        localStorage.setItem('syncdoc_auth', 'true');
+        localStorage.setItem('syncdoc_user', JSON.stringify(res.user));
+        localStorage.setItem('syncdoc_user_name', res.user.name);
+        localStorage.setItem('syncdoc_user_id', res.user.userId);
+        localStorage.setItem('syncdoc_user_color', res.user.userColor);
+
+        sessionStorage.setItem('syncdoc_token', res.token);
+        sessionStorage.setItem('syncdoc_auth', 'true');
+        sessionStorage.setItem('syncdoc_user_name', res.user.name);
+
+        if (onSwitchToLogin) onSwitchToLogin();
+      } else {
+        throw new Error(res.error || "Registration failed.");
+      }
+    } catch (err) {
+      console.error("[Signup] Error:", err);
+      setError(err?.message || "Registration failed. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      const name = fullName.trim();
-      localStorage.setItem('syncdoc_auth', 'true');
-      localStorage.setItem('syncdoc_user_name', name);
-      sessionStorage.setItem('syncdoc_auth', 'true');
-      sessionStorage.setItem('syncdoc_user_name', name);
-      if (onSwitchToLogin) onSwitchToLogin();
-    }, 400);
+    }
   };
 
   const handleLoginClick = (e) => {

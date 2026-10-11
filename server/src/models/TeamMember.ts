@@ -19,12 +19,11 @@ const TeamMemberSchema = new Schema<ITeamMember>(
   { timestamps: true }
 );
 
-export const DEFAULT_TEAM_MEMBERS = [
-  { userId: 'user_kavin', userName: 'Kavin', userColor: '#3b82f6', role: 'Lead Developer' },
-  { userId: 'user_sam', userName: 'Sam Rivera', userColor: '#10b981', role: 'Collaborator' },
-  { userId: 'user_alex', userName: 'Alex Chen', userColor: '#8b5cf6', role: 'Collaborator' },
-  { userId: 'user_taylor', userName: 'Taylor Kim', userColor: '#f59e0b', role: 'Designer' },
-  { userId: 'user_jordan', userName: 'Jordan Vance', userColor: '#ec4899', role: 'Reviewer' },
-];
+export const DEFAULT_TEAM_MEMBERS: Array<{
+  userId: string;
+  userName: string;
+  userColor: string;
+  role: string;
+}> = [];
 
 export const TeamMemberModel = mongoose.model<ITeamMember>('TeamMember', TeamMemberSchema);

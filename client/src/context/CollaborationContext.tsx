@@ -55,12 +55,11 @@ const COLOR_PALETTE = [
 ];
 
 function getRandomUser(): UserProfile {
-  const names = ['Kavin', 'Sam Rivera', 'Alex Chen', 'Taylor Kim', 'Jordan Vance', 'Morgan Lee'];
   const storedName = localStorage.getItem('syncdoc_user_name') || sessionStorage.getItem('syncdoc_user_name');
   const storedId = localStorage.getItem('syncdoc_user_id') || sessionStorage.getItem('syncdoc_user_id') || `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  const storedColor = localStorage.getItem('syncdoc_user_color') || sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]!;
+  const storedColor = localStorage.getItem('syncdoc_user_color') || sessionStorage.getItem('syncdoc_user_color') || COLOR_PALETTE[0]!;
 
-  const userName = storedName || names[0]!;
+  const userName = storedName || 'Kavin';
   sessionStorage.setItem('syncdoc_user_id', storedId);
   sessionStorage.setItem('syncdoc_user_name', userName);
   sessionStorage.setItem('syncdoc_user_color', storedColor);
@@ -347,6 +346,7 @@ export const CollaborationProvider: React.FC<{
       }
     } catch (err) {
       console.error(`Failed to rollback to version ${versionNumber}:`, err);
+      throw err;
     }
   }, [documentId]);
 

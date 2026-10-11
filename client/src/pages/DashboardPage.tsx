@@ -10,30 +10,32 @@ import {
   Layers,
   BookOpen,
   Code,
-  ShieldCheck,
   ArrowRight,
   RefreshCw,
   Check,
   LogOut,
 } from 'lucide-react';
-import { ApiService, DocumentSummary } from '../services/api.js';
+import { ApiService, DocumentSummary, AuthUser } from '../services/api.js';
 import { createDocumentAST, DocumentNode, HeadingNode, ParagraphNode, CodeBlockNode, ListNode, TeamMember } from '@syncdoc/shared';
 import "./DashboardPage.css";
 import Sidebar from '../components/Sidebar.jsx';
 import { TeamMembersPanel } from '../components/TeamMembersPanel.js';
+import { SettingsModal } from '../components/SettingsModal.js';
 import { getSharedSocket } from '../services/socket.js';
 
 interface DashboardPageProps {
+  currentUser?: AuthUser | null;
   onOpenDocument: (documentId: string) => void;
   onLogout?: () => void;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, onLogout }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ currentUser, onOpenDocument, onLogout }) => {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [importMarkdownText, setImportMarkdownText] = useState('');
   const [importTitle, setImportTitle] = useState('');
 
@@ -41,10 +43,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
 
-  // User preferences
-  const [userName, setUserName] = useState(() => localStorage.getItem('syncdoc_user_name') || 'Kavin');
+  // User preferences from genuine authenticated session
+  const [userName, setUserName] = useState(() => currentUser?.name || localStorage.getItem('syncdoc_user_name') || 'Team Member');
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userName);
+
+  useEffect(() => {
+    if (currentUser?.name) {
+      setUserName(currentUser.name);
+      setTempName(currentUser.name);
+    }
+  }, [currentUser]);
 
   // Load team members and synchronize real-time presence via Socket.IO
   useEffect(() => {
@@ -65,16 +74,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
     fetchTeam();
 
     const socket = getSharedSocket();
-    const normalizedName = userName.trim() || 'Kavin';
+    const normalizedName = userName.trim() || currentUser?.name || 'User';
     const userId =
+      currentUser?.userId ||
       localStorage.getItem('syncdoc_user_id') ||
       `user_${normalizedName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const userColor = currentUser?.userColor || localStorage.getItem('syncdoc_user_color') || '#3b82f6';
 
     const registerUser = () => {
       socket.emit('register-presence', {
         userId,
         userName: normalizedName,
-        userColor: '#3b82f6',
+        userColor,
       });
     };
 
@@ -258,6 +269,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
         activeDocumentId={null}
         onSelectDocument={onOpenDocument}
         onNewDocument={() => handleCreateFromTemplate('blank')}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLogout={onLogout}
       />
 
       {/* Main Content Area */}
@@ -346,13 +359,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
               <div>
                 <h1 className="dashboard-hero-title">Technical Workspace</h1>
                 <p className="dashboard-hero-desc">
-                  Collaborative AST document engine with real-time conflict-free synchronization.
+                  Collaborative document workspace with real-time sync, rich block editing, and instant exports.
                 </p>
-              </div>
-
-              <div className="dashboard-engine-badge">
-                <ShieldCheck size={14} className="text-emerald-400" />
-                <span>Mongoose Recursive AST Validation</span>
               </div>
             </div>
 
@@ -665,6 +673,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenDocument, on
           </div>
         </div>
       )}
+
+      {/* Workspace Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentUserName={userName}
+        onUpdateUserName={(newName) => {
+          setUserName(newName);
+          setTempName(newName);
+          localStorage.setItem('syncdoc_user_name', newName);
+          sessionStorage.setItem('syncdoc_user_name', newName);
+          const socket = getSharedSocket();
+          const userId =
+            localStorage.getItem('syncdoc_user_id') ||
+            `user_${newName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+          socket.emit('register-presence', {
+            userId,
+            userName: newName,
+            userColor: '#3b82f6',
+          });
+        }}
+        memberCount={teamMembers.length}
+        documentCount={documents.length}
+      />
     </div>
   );
 };

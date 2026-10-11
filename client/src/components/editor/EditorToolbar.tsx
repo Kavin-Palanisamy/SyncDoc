@@ -9,19 +9,12 @@ import {
   Eye,
   FileCode,
   Layout,
-  Heading,
-  Type,
-  Code,
-  List,
-  Quote,
-  Minus,
   CheckCircle2,
   ArrowLeft,
   Edit2,
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext.js';
 import { CollaboratorList } from './CollaboratorList.js';
-import { ConflictIndicator } from './ConflictIndicator.js';
 
 interface EditorToolbarProps {
   viewMode: 'editor' | 'ast' | 'markdown' | 'html';
@@ -41,8 +34,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   const {
     title,
     updateTitle,
-    version,
-    nodes,
     collaborators,
     currentUser,
     connectionStatus,
@@ -53,7 +44,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     isSaving,
     lastSavedAt,
     triggerSave,
-    insertBlock,
   } = useCollaboration();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -110,8 +100,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
               <Edit2 size={12} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
           )}
-
-         <ConflictIndicator version={version} />
         </div>
         <div className="toolbar-divider" />
         {/* Center: Segmented View Switcher */}
@@ -159,13 +147,16 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
         {/* Right: Presence, Undo/Redo, History, Export & Save status */}
         <div className="toolbar-group toolbar-group--right">
           <div className="toolbar-right-top">
-            <CollaboratorList
-              collaborators={collaborators}
-              currentUser={currentUser}
-              connectionStatus={connectionStatus}
-            />
-
-            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+            {localStorage.getItem('syncdoc_show_presence') !== 'false' && (
+              <>
+                <CollaboratorList
+                  collaborators={collaborators}
+                  currentUser={currentUser}
+                  connectionStatus={connectionStatus}
+                />
+                <div className="h-4 w-px bg-white/10 hidden sm:block" />
+              </>
+            )}
 
             {/* Undo / Redo Group */}
             <div className="hidden sm:inline-flex btn-editor-group" aria-label="History undo and redo">

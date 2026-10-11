@@ -1,33 +1,180 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { ApiService } from "../services/api";
 import "./Login.css";
-export default function Login({onLogin,onSwitchToSignup }) {
+
+export default function Login({ onLogin, onSwitchToSignup }) {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [googleConfigNote, setGoogleConfigNote] = useState("");
+  const googleBtnContainerRef = useRef(null);
 
-  const handleSubmit = (e) => {
+  const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
+
+  // Initialize Google Identity Services (GSI) when script is ready
+  useEffect(() => {
+    if (!googleClientId) return;
+
+    let checkInterval = null;
+    const initializeGoogle = () => {
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+
+          // Optional: render hidden official button for native fallback trigger
+          if (googleBtnContainerRef.current) {
+            window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              text: "continue_with",
+              width: 320,
+            });
+          }
+        } catch (initErr) {
+          console.warn("[Google GSI] Initialization failed:", initErr);
+        }
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogle();
+    } else {
+      checkInterval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          initializeGoogle();
+          clearInterval(checkInterval);
+        }
+      }, 300);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [googleClientId]);
+
+  // Handle Google Credential Response from GSI
+  const handleGoogleCredentialResponse = async (response) => {
+    if (!response || !response.credential) {
+      setError("Google authentication was cancelled or returned an empty response.");
+      return;
+    }
+
+    setIsGoogleSubmitting(true);
+    setError("");
+    setGoogleConfigNote("");
+
+    try {
+      const res = await ApiService.googleLogin(response.credential);
+      if (res && res.token && res.user) {
+        localStorage.setItem("syncdoc_token", res.token);
+        localStorage.setItem("syncdoc_auth", "true");
+        localStorage.setItem("syncdoc_user", JSON.stringify(res.user));
+        localStorage.setItem("syncdoc_user_name", res.user.name);
+        localStorage.setItem("syncdoc_user_id", res.user.userId);
+        localStorage.setItem("syncdoc_user_color", res.user.userColor);
+
+        sessionStorage.setItem("syncdoc_token", res.token);
+        sessionStorage.setItem("syncdoc_auth", "true");
+        sessionStorage.setItem("syncdoc_user_name", res.user.name);
+
+        if (onLogin) onLogin(res.user);
+      } else {
+        throw new Error(res.error || "Google authentication failed.");
+      }
+    } catch (err) {
+      console.error("[Login] Google login error:", err);
+      setError(err.message || "Failed to sign in with Google. Please try again.");
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
+  // Google Login button click handler
+  const handleGoogleClick = () => {
+    setError("");
+    setGoogleConfigNote("");
+
+    if (!googleClientId) {
+      setGoogleConfigNote(
+        "Google Sign-In is integrated. To enable live OAuth, configure VITE_GOOGLE_CLIENT_ID in your .env file."
+      );
+      return;
+    }
+
+    if (window.google?.accounts?.id) {
+      setIsGoogleSubmitting(true);
+      try {
+        window.google.accounts.id.prompt((notification) => {
+          setIsGoogleSubmitting(false);
+          if (notification.isNotDisplayed()) {
+            // If prompt could not display, click official container if available
+            if (googleBtnContainerRef.current) {
+              const innerBtn = googleBtnContainerRef.current.querySelector("div[role=button]");
+              if (innerBtn) (innerBtn).click();
+            } else {
+              setError("Google sign-in popup was blocked or could not be displayed.");
+            }
+          } else if (notification.isSkippedMoment()) {
+            setError("Google sign-in was dismissed.");
+          }
+        });
+      } catch (err) {
+        setIsGoogleSubmitting(false);
+        setError("Unable to launch Google authentication dialog. Please check your browser popup settings.");
+      }
+    } else {
+      setError("Google authentication service is still loading. Please wait a moment and try again.");
+    }
+  };
+
+  // Standard Email/Password login submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setGoogleConfigNote("");
 
     if (!identifier.trim() || !password.trim()) {
       setError("Enter your email/username and password to continue.");
       return;
     }
 
-    // Authenticate and persist user identity
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const res = await ApiService.login(identifier.trim(), password);
+      if (res && res.token && res.user) {
+        localStorage.setItem("syncdoc_token", res.token);
+        localStorage.setItem("syncdoc_auth", "true");
+        localStorage.setItem("syncdoc_user", JSON.stringify(res.user));
+        localStorage.setItem("syncdoc_user_name", res.user.name);
+        localStorage.setItem("syncdoc_user_id", res.user.userId);
+        localStorage.setItem("syncdoc_user_color", res.user.userColor);
+
+        sessionStorage.setItem("syncdoc_token", res.token);
+        sessionStorage.setItem("syncdoc_auth", "true");
+        sessionStorage.setItem("syncdoc_user_name", res.user.name);
+
+        if (onLogin) onLogin(res.user);
+      } else {
+        throw new Error(res.error || "Authentication failed.");
+      }
+    } catch (err) {
+      console.error("[Login] Submit error:", err);
+      setError(err.message || "Invalid credentials. Please verify your email and password.");
+    } finally {
       setIsSubmitting(false);
-      const name = identifier.trim();
-      localStorage.setItem('syncdoc_auth', 'true');
-      localStorage.setItem('syncdoc_user_name', name);
-      sessionStorage.setItem('syncdoc_auth', 'true');
-      sessionStorage.setItem('syncdoc_user_name', name);
-      if (onLogin) onLogin(name);
-    }, 400);
+    }
   };
+
+  const isBusy = isSubmitting || isGoogleSubmitting;
 
   return (
     <div className="login-page">
@@ -89,6 +236,7 @@ export default function Login({onLogin,onSwitchToSignup }) {
                 autoComplete="username"
                 placeholder="you@example.com"
                 value={identifier}
+                disabled={isBusy}
                 onChange={(e) => setIdentifier(e.target.value)}
               />
             </div>
@@ -121,6 +269,7 @@ export default function Login({onLogin,onSwitchToSignup }) {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
+                disabled={isBusy}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <button
@@ -171,20 +320,75 @@ export default function Login({onLogin,onSwitchToSignup }) {
             )}
           </div>
 
-          <button type="submit" className="login-submit" disabled={isSubmitting}>
-            <span>{isSubmitting ? "Signing in" : "Sign in"}</span>
+          <button
+            type="submit"
+            className="login-submit"
+            disabled={isBusy}
+            aria-busy={isSubmitting}
+          >
+            <span>{isSubmitting ? "Signing in..." : "Sign in"}</span>
           </button>
-          
+
+          {/* Visual "OR" Divider */}
+          <div className="login-divider" aria-hidden="true">
+            <span>OR</span>
+          </div>
+
+          {/* Continue with Google button */}
+          <button
+            type="button"
+            className="login-google-btn"
+            onClick={handleGoogleClick}
+            disabled={isBusy}
+            aria-busy={isGoogleSubmitting}
+            aria-label="Continue with Google"
+          >
+            <svg
+              className="login-google-icon"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                fill="#EA4335"
+              />
+            </svg>
+            <span>{isGoogleSubmitting ? "Connecting to Google..." : "Continue with Google"}</span>
+          </button>
+
+          {/* Hidden container for Google GSI iframe if needed */}
+          <div ref={googleBtnContainerRef} style={{ display: "none" }} aria-hidden="true" />
+
+          {googleConfigNote && (
+            <div className="login-google-fallback-note" role="note">
+              {googleConfigNote}
+            </div>
+          )}
+
           <p className="login-switch">
-         Don't have an account?{" "}
-       <button
-        type="button"
-       onClick={onSwitchToSignup}
-      className="login-signup-link"
-     >
-    Sign up
-  </button>
-</p>
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={onSwitchToSignup}
+              className="login-signup-link"
+              disabled={isBusy}
+            >
+              Sign up
+            </button>
+          </p>
         </form>
       </main>
     </div>

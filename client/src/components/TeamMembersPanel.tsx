@@ -160,7 +160,7 @@ export const TeamMembersPanel: React.FC<TeamMembersPanelProps> = ({
         <div className="team-panel-footer-inner">
           <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
             <Activity size={12} className="text-emerald-400" />
-            <span>CRDT Presence Active</span>
+            <span>Live Presence Active</span>
           </div>
           <span className="text-[10px] text-slate-500 font-mono">
             {uniqueMembers.length} members

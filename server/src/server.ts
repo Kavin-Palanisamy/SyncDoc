@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 import { connectDB, disconnectDB } from './config/db.js';
 import documentRoutes from './routes/documentRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import { WebSocketCollaborationServer } from './collaboration/WebSocketServer.js';
 
 dotenv.config();
@@ -62,6 +63,7 @@ app.use((err: any, _req: express.Request, res: express.Response, next: express.N
 });
 
 // REST Routes
+app.use('/api/auth', authRoutes);
 app.use('/api', documentRoutes);
 
 // Health Check

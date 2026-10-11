@@ -54,7 +54,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
         </div>
 
         {/* Remote Collaborators */}
-        {/* {collaborators.map((c) => (
+        {collaborators.map((c) => (
           <div
             key={c.clientId}
             className="presence-avatar-wrap group"
@@ -71,7 +71,7 @@ export const CollaboratorList: React.FC<CollaboratorListProps> = ({
               <span className="presence-tooltip-state">{c.editingState || 'viewing'}</span>
             </div>
           </div>
-        ))} */}
+        ))}
 
         
       </div>
